@@ -166,12 +166,6 @@ def index_page():
     return HTML_CONTENT
 
 
-@app.get("/{full_path:path}", response_class=HTMLResponse)
-def catch_all(full_path: str):
-    if full_path.startswith("api/") or full_path == "api":
-        raise HTTPException(status_code=404, detail="Not Found")
-    return HTML_CONTENT
-
 
 
 HTML_CONTENT = """<!DOCTYPE html>
