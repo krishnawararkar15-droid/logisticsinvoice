@@ -101,11 +101,13 @@ class AuditPayload(BaseModel):
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "ok", "app": "Accessorial Invoice Checker v1"}
 
 
 @app.post("/api/audit")
+@app.post("/audit")
 def run_audit(payload: AuditPayload):
     try:
         # Normalize terms
@@ -146,6 +148,7 @@ def run_audit(payload: AuditPayload):
 
 
 @app.post("/api/ocr")
+@app.post("/ocr")
 async def extract_ocr(file: UploadFile = File(...)):
     try:
         file_bytes = await file.read()
@@ -156,8 +159,19 @@ async def extract_ocr(file: UploadFile = File(...)):
 
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/app.py", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
 def index_page():
     return HTML_CONTENT
+
+
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+def catch_all(full_path: str):
+    if full_path.startswith("api/") or full_path == "api":
+        raise HTTPException(status_code=404, detail="Not Found")
+    return HTML_CONTENT
+
 
 
 HTML_CONTENT = """<!DOCTYPE html>
