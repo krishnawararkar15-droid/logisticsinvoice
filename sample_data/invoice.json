@@ -1,0 +1,9 @@
+{
+  "lines": [
+    {"type": "linehaul_fsc", "qty": 1, "unit_rate": 1500, "amount": 1500},
+    {"type": "prepull", "qty": 1, "unit_rate": 150, "amount": 150},
+    {"type": "chassis", "qty": 3, "unit_rate": 45, "amount": 135},
+    {"type": "storage", "qty": 2, "unit_rate": 45, "amount": 90}
+  ],
+  "total": 1875
+}

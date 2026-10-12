@@ -1,0 +1,12 @@
+{
+  "terminal_pickup": "2026-06-23T21:00",
+  "yard_in": null,
+  "yard_out": null,
+  "warehouse_appointment": "2026-06-24T08:00",
+  "delivery_actual": "2026-06-24T08:00",
+  "warehouse_in": null,
+  "warehouse_out": null,
+  "empty_return": "2026-06-24T16:00",
+  "pod_provided": false,
+  "prepull_request_documented": null
+}

@@ -1,0 +1,14 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Streamlit
+.streamlit/
+
+# Local audit output files
+output/*.md
+output/*.json
+output/*.csv
+!output/.gitkeep
