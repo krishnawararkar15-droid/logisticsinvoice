@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 root_dir = str(Path(__file__).resolve().parent.parent)
@@ -24,12 +24,23 @@ app.add_middleware(
 )
 
 
-@app.api_route("/api/ocr", methods=["POST", "OPTIONS"])
-@app.api_route("/", methods=["POST", "OPTIONS"])
-async def ocr_endpoint(file: UploadFile = File(...)):
+@app.api_route("/{path:path}", methods=["GET", "POST", "OPTIONS"])
+@app.api_route("/", methods=["GET", "POST", "OPTIONS"])
+async def ocr_endpoint(request: Request, file: UploadFile = File(None)):
+    if request.method == "OPTIONS":
+        return {"ok": True}
+    if request.method == "GET":
+        return {"status": "ok", "endpoint": "ocr"}
+
     try:
+        if file is None:
+            form = await request.form()
+            file = form.get("file")
+        if not file:
+            raise HTTPException(status_code=400, detail="No file uploaded")
+
         file_bytes = await file.read()
-        parsed = process_invoice(file_bytes, filename=file.filename)
+        parsed = process_invoice(file_bytes, filename=getattr(file, "filename", "invoice.pdf"))
         return {"success": True, "data": parsed}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR Extraction failed: {str(e)}")

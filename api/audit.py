@@ -1,9 +1,9 @@
 """Vercel Serverless Function for /api/audit."""
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -33,11 +33,21 @@ class AuditPayload(BaseModel):
     invoice: Dict[str, Any]
 
 
-@app.api_route("/api/audit", methods=["GET", "POST", "OPTIONS"])
+@app.api_route("/{path:path}", methods=["GET", "POST", "OPTIONS"])
 @app.api_route("/", methods=["GET", "POST", "OPTIONS"])
-def audit_endpoint(payload: AuditPayload):
+async def audit_endpoint(request: Request, payload: Optional[AuditPayload] = None):
+    if request.method == "OPTIONS":
+        return {"ok": True}
+    if request.method == "GET":
+        return {"status": "ok", "endpoint": "audit", "path": request.url.path}
+
     try:
-        terms = dict(payload.terms)
+        body = payload
+        if body is None:
+            raw = await request.json()
+            body = AuditPayload(**raw)
+
+        terms = dict(body.terms)
         if terms.get("chassis_day_policy") == "unknown":
             terms["chassis_day_policy"] = None
         if terms.get("prepull_includes_first_storage_day") == "unknown":
@@ -47,7 +57,7 @@ def audit_endpoint(payload: AuditPayload):
         elif terms.get("prepull_includes_first_storage_day") in ("no", False):
             terms["prepull_includes_first_storage_day"] = False
 
-        timeline = dict(payload.timeline)
+        timeline = dict(body.timeline)
         if timeline.get("prepull_request_documented") == "unknown":
             timeline["prepull_request_documented"] = None
         elif timeline.get("prepull_request_documented") in ("yes", True):
@@ -55,7 +65,7 @@ def audit_endpoint(payload: AuditPayload):
         elif timeline.get("prepull_request_documented") in ("no", False):
             timeline["prepull_request_documented"] = False
 
-        result: AuditResult = audit_invoice(payload.invoice, terms, timeline)
+        result: AuditResult = audit_invoice(body.invoice, terms, timeline)
         md_content = build_markdown_report(result)
         csv_content = build_csv_report(result)
 
