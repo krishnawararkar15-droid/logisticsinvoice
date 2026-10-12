@@ -296,6 +296,16 @@ def extract_text_from_file(
     return extract_text(file_input, **kwargs)
 
 
+NON_ITEM_PATTERN = re.compile(
+    r"\b(?:broker|bill\s*to|shipment\s*details|llc|inc|corp|ltd|co\b|suite|street|avenue|blvd|way\b|attn|payable|remit|wire|routing|acct|account|bank|carrier\s*staging|port\s*terminal|out-gate|in-gate|bill\s*of\s*lading|container\s*#|container\s*no|tclu|msku|medu|cma|cosu|oneu|dot#|mc#|phone|tel|email|fax|date:|terms:|high\s*cube)\b",
+    re.IGNORECASE,
+)
+
+
+
+
+
+
 def _classify_line(line_text: str) -> Optional[str]:
     """Determine the drayage charge type for a single line."""
     lower = line_text.lower().strip()
@@ -308,11 +318,16 @@ def _classify_line(line_text: str) -> Optional[str]:
     if HEADER_LINE_PATTERN.search(lower):
         return None
 
+    # Skip address, shipment metadata, or remittance lines
+    if NON_ITEM_PATTERN.search(lower):
+        return None
+
     for category, pattern in CLASSIFICATION_RULES:
         if pattern.search(lower):
             return category
 
     return None
+
 
 
 def _clean_description(line: str) -> str:

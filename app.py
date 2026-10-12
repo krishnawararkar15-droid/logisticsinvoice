@@ -163,7 +163,11 @@ async def extract_ocr(file: UploadFile = File(...)):
 @app.get("/app", response_class=HTMLResponse)
 @app.get("/index.html", response_class=HTMLResponse)
 def index_page():
-    return HTML_CONTENT
+    index_file = Path(__file__).resolve().parent / "index.html"
+    if index_file.exists():
+        return HTMLResponse(index_file.read_text(encoding="utf-8"))
+    return HTMLResponse(HTML_CONTENT)
+
 
 
 
