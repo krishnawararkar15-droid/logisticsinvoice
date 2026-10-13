@@ -1,0 +1,14 @@
+{
+  "linehaul_fsc": 1450,
+  "prepull_fee": 150,
+  "chassis_per_day": 45,
+  "storage_per_day": 45,
+  "detention_per_hour": 75,
+  "detention_free_hours": 2,
+  "chassis_day_policy": "calendar_day",
+  "chassis_free_days": 0,
+  "chassis_min_days": 0,
+  "storage_free_days": 0,
+  "prepull_includes_first_storage_day": null,
+  "direct_move_hours_threshold": 24
+}

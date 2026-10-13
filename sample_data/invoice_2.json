@@ -1,0 +1,29 @@
+{
+  "lines": [
+    {
+      "type": "linehaul_fsc",
+      "qty": 1,
+      "unit_rate": 1450,
+      "amount": 1450
+    },
+    {
+      "type": "chassis",
+      "qty": 3,
+      "unit_rate": 45,
+      "amount": 135
+    },
+    {
+      "type": "detention",
+      "qty": 4,
+      "unit_rate": 75,
+      "amount": 300
+    },
+    {
+      "type": "storage",
+      "qty": 2,
+      "unit_rate": 45,
+      "amount": 90
+    }
+  ],
+  "total": 1975
+}
