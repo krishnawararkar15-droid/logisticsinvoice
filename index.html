@@ -176,7 +176,7 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
-    }
+    }}
     .tab-btn.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
@@ -531,12 +531,8 @@
         <h1>🚚 Accessorial Invoice Checker</h1>
         <p>Deterministic Drayage & Intermodal Audit Engine — No AI APIs, 100% Explainable Date Math</p>
       </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <button class="btn btn-primary" onclick="loadSampleData()">⚡ Test Case 1 (Pacific)</button>
-        <button class="btn btn-primary" onclick="loadSampleData2()" style="background:#0284c7; border-color:#0284c7;">⚡ Test Case 2 (Midwest)</button>
-        <button class="btn btn-secondary" onclick="downloadSamplePdf()">📥 Sample 1 PDF</button>
-        <button class="btn btn-secondary" onclick="downloadSamplePdf2()">📥 Sample 2 PDF</button>
-        <button class="btn btn-secondary" onclick="resetForm()">🔄 Reset</button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <button class="btn btn-secondary" onclick="resetForm()">🔄 Reset Form</button>
         <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
           <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
         </button>
@@ -546,13 +542,13 @@
 
   <main class="container">
 
-    <!-- Quick Upload Bar -->
+    <!-- Upload Bar -->
     <div class="card" style="padding: 16px 20px; background: var(--quick-bar-bg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 1.5rem;">📄</span>
         <div>
-          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Import Carrier Invoice</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Upload PDF invoice, PNG/JPG scan, or JSON file to auto-populate line items</div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Upload Carrier Invoice</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Upload PDF invoice, scanned image, or JSON to auto-populate and audit line items</div>
         </div>
       </div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -638,7 +634,7 @@
 
     <!-- TAB 2: CONTAINER TIMELINE -->
     <div id="tab-timeline" class="tab-content card" style="display:none;">
-      <h2 class="card-title">Container Movement Timeline & Gate Events</h2>
+      <h2 class="card-title">Container Milestone Timestamps</h2>
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Terminal Outgate / Pickup Timestamp</label>
@@ -718,10 +714,6 @@
         <div class="dropzone" onclick="document.getElementById('ocr-file').click()">
           <p style="font-weight: 700; color: var(--primary); font-size: 1.05rem;">📄 Drag & Drop or Click to Upload Carrier Invoice</p>
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Supports PDF, Image (PNG/JPG), and JSON files</p>
-          <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-            <span class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 10px;" onclick="event.stopPropagation(); downloadSamplePdf();">📥 Download Sample 1 PDF</span>
-            <span class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 10px;" onclick="event.stopPropagation(); downloadSamplePdf2();">📥 Download Sample 2 PDF</span>
-          </div>
           <input type="file" id="ocr-file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.json" onchange="handleInvoiceFile(this)">
         </div>
         <div id="ocr-status" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; display: none;"></div>
@@ -997,7 +989,6 @@
           return profile;
         }
       }
-      // Fallback profile
       return {
         name: itemKey,
         icon: "📄",
@@ -1012,55 +1003,12 @@
     let currentAuditData = null;
     let verifiedDocIndexes = new Set();
 
-    const sampleInvoiceLines = [
+    const initialInvoiceLines = [
       { type: "linehaul_fsc", qty: 1, unit_rate: 1500, amount: 1500 },
       { type: "prepull", qty: 1, unit_rate: 150, amount: 150 },
       { type: "chassis", qty: 3, unit_rate: 45, amount: 135 },
       { type: "storage", qty: 2, unit_rate: 45, amount: 90 }
     ];
-
-    const SAMPLE_PDF_BASE64 = "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";
-    const SAMPLE_PDF_2_BASE64 = "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";
-
-    function downloadSamplePdf() {
-      const byteCharacters = atob(SAMPLE_PDF_BASE64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "PACIFIC_GATEWAY_INV-2026-0842.pdf";
-      link.click();
-    }
-
-    function downloadSamplePdf2() {
-      const byteCharacters = atob(SAMPLE_PDF_2_BASE64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "MIDWEST_INTERMODAL_INV-2026-1055.pdf";
-      link.click();
-    }
-
-    function downloadSampleJson() {
-      const data = {
-        lines: sampleInvoiceLines,
-        total: 1875
-      };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "sample_invoice.json";
-      link.click();
-    }
 
     function switchTab(tabId, el) {
       document.querySelectorAll('.tab-content').forEach(d => d.style.display = 'none');
@@ -1155,86 +1103,6 @@
       return lines;
     }
 
-    function loadSampleData() {
-      // Terms Sample 1
-      document.getElementById('linehaul_fsc').value = 1500;
-      document.getElementById('prepull_fee').value = 150;
-      document.getElementById('chassis_per_day').value = 45;
-      document.getElementById('storage_per_day').value = 45;
-      document.getElementById('detention_per_hour').value = 75;
-      document.getElementById('detention_free_hours').value = 2;
-      document.getElementById('chassis_day_policy').value = "calendar_day";
-      document.getElementById('chassis_free_days').value = 0;
-      document.getElementById('chassis_min_days').value = 0;
-      document.getElementById('storage_free_days').value = 0;
-      document.getElementById('prepull_includes_first_storage_day').value = "unknown";
-      document.getElementById('direct_move_hours_threshold').value = 24;
-
-      // Timeline Sample 1
-      setTimestamp('terminal_pickup', '2026-06-23T21:00', false);
-      setTimestamp('yard_in', '', true);
-      setTimestamp('yard_out', '', true);
-      setTimestamp('warehouse_appointment', '2026-06-24T08:00', false);
-      setTimestamp('delivery_actual', '2026-06-24T08:00', false);
-      setTimestamp('warehouse_in', '', true);
-      setTimestamp('warehouse_out', '', true);
-      setTimestamp('empty_return', '2026-06-24T16:00', false);
-
-      document.getElementById('pod_provided').checked = false;
-      document.getElementById('prepull_request_documented').value = "unknown";
-
-      // Invoice Sample 1
-      renderInvoiceLines(sampleInvoiceLines);
-      document.getElementById('invoice_total').value = 1875;
-
-      // Email prefill
-      document.getElementById('email-recipient').value = 'billing@pacificgatewaydrayage.com';
-      document.getElementById('email-subject').value = 'Payment Update & Invoice Review - Container TCLU 582910-3 (Inv #INV-2026-0842)';
-    }
-
-    function loadSampleData2() {
-      // Terms Sample 2 (Midwest Intermodal)
-      document.getElementById('linehaul_fsc').value = 1450;
-      document.getElementById('prepull_fee').value = 150;
-      document.getElementById('chassis_per_day').value = 45;
-      document.getElementById('storage_per_day').value = 45;
-      document.getElementById('detention_per_hour').value = 75;
-      document.getElementById('detention_free_hours').value = 2;
-      document.getElementById('chassis_day_policy').value = "calendar_day";
-      document.getElementById('chassis_free_days').value = 0;
-      document.getElementById('chassis_min_days').value = 0;
-      document.getElementById('storage_free_days').value = 0;
-      document.getElementById('prepull_includes_first_storage_day').value = "unknown";
-      document.getElementById('direct_move_hours_threshold').value = 24;
-
-      // Timeline Sample 2
-      setTimestamp('terminal_pickup', '2026-06-25T14:00', false);
-      setTimestamp('yard_in', '', true);
-      setTimestamp('yard_out', '', true);
-      setTimestamp('warehouse_appointment', '2026-06-26T09:00', false);
-      setTimestamp('delivery_actual', '2026-06-26T09:00', false);
-      setTimestamp('warehouse_in', '2026-06-26T09:00', false);
-      setTimestamp('warehouse_out', '2026-06-26T14:30', false); // 5.5 hours elapsed -> 3.5 hrs detention
-      setTimestamp('empty_return', '2026-06-27T11:00', false);
-
-      document.getElementById('pod_provided').checked = false;
-      document.getElementById('prepull_request_documented').value = "unknown";
-
-      // Invoice Lines Sample 2
-      const lines2 = [
-        { type: "linehaul_fsc", qty: 1, unit_rate: 1450, amount: 1450 },
-        { type: "chassis", qty: 3, unit_rate: 45, amount: 135 },
-        { type: "detention", qty: 4, unit_rate: 75, amount: 300 },
-        { type: "storage", qty: 2, unit_rate: 45, amount: 90 }
-      ];
-      renderInvoiceLines(lines2);
-      document.getElementById('invoice_total').value = 1975;
-
-      // Email prefill for Sample 2
-      document.getElementById('email-recipient').value = 'ap@midwestintermodal.com';
-      document.getElementById('email-subject').value = 'Payment Update & Invoice Review - Container MSKU 782014-9 (Inv #INV-2026-1055)';
-    }
-
     function setTimestamp(id, val, isNull) {
       const chk = document.getElementById('null_' + id);
       const inp = document.getElementById(id);
@@ -1249,9 +1117,42 @@
     }
 
     function resetForm() {
-      loadSampleData();
+      // Contract Terms Default
+      document.getElementById('linehaul_fsc').value = 1500;
+      document.getElementById('prepull_fee').value = 150;
+      document.getElementById('chassis_per_day').value = 45;
+      document.getElementById('storage_per_day').value = 45;
+      document.getElementById('detention_per_hour').value = 75;
+      document.getElementById('detention_free_hours').value = 2;
+      document.getElementById('chassis_day_policy').value = "calendar_day";
+      document.getElementById('chassis_free_days').value = 0;
+      document.getElementById('chassis_min_days').value = 0;
+      document.getElementById('storage_free_days').value = 0;
+      document.getElementById('prepull_includes_first_storage_day').value = "unknown";
+      document.getElementById('direct_move_hours_threshold').value = 24;
+
+      // Timeline Default
+      setTimestamp('terminal_pickup', '2026-06-23T21:00', false);
+      setTimestamp('yard_in', '', true);
+      setTimestamp('yard_out', '', true);
+      setTimestamp('warehouse_appointment', '2026-06-24T08:00', false);
+      setTimestamp('delivery_actual', '2026-06-24T08:00', false);
+      setTimestamp('warehouse_in', '', true);
+      setTimestamp('warehouse_out', '', true);
+      setTimestamp('empty_return', '2026-06-24T16:00', false);
+
+      document.getElementById('pod_provided').checked = false;
+      document.getElementById('prepull_request_documented').value = "unknown";
+
+      // Lines Default
+      renderInvoiceLines(initialInvoiceLines);
+      document.getElementById('invoice_total').value = 1875;
+
       document.getElementById('audit-results').style.display = 'none';
-      alert("Form reset to clean baseline defaults!");
+      const statusDiv = document.getElementById('ocr-status');
+      if (statusDiv) statusDiv.style.display = 'none';
+
+      alert("Form has been reset to baseline defaults!");
     }
 
     async function handleInvoiceFile(input) {
@@ -1267,7 +1168,7 @@
       const statusDiv = document.getElementById('ocr-status');
       statusDiv.style.display = 'block';
       statusDiv.style.color = 'var(--primary)';
-      statusDiv.innerText = `⏳ Parsing "${file.name}"...`;
+      statusDiv.innerText = `⏳ Extracting text from "${file.name}"...`;
 
       if (file.name.endsWith('.json')) {
         try {
@@ -1313,26 +1214,18 @@
               autoSumLines();
             }
             statusDiv.style.color = 'var(--success)';
-            statusDiv.innerText = `✅ Extracted ${parsed.lines.length} line items (Total: $${parsed.total || '0'})! Review lines below.`;
+            statusDiv.innerText = `✅ Extracted ${parsed.lines.length} line items from invoice (Total: $${parsed.total || '0'})! Review lines below.`;
           } else {
             statusDiv.style.color = 'var(--warning)';
-            statusDiv.innerText = `⚠️ Extracted text, but no standard drayage charges recognized. You can add lines manually below.`;
+            statusDiv.innerText = `⚠️ OCR finished, but could not detect standard drayage line items. You can add or edit lines below.`;
           }
         } else {
-          throw new Error(json.detail || "OCR Extraction returned no valid data.");
+          throw new Error(json.detail || "OCR returned no valid data.");
         }
       } catch(err) {
-        console.warn("OCR API error, using smart fallback:", err);
+        console.warn("OCR API error:", err);
         statusDiv.style.color = 'var(--warning)';
-        
-        if (file.name.includes('1055') || file.name.toLowerCase().includes('midwest')) {
-          loadSampleData2();
-          statusDiv.innerText = `✅ Loaded Midwest Intermodal INV-2026-1055 line items!`;
-        } else {
-          renderInvoiceLines(sampleInvoiceLines);
-          document.getElementById('invoice_total').value = 1875;
-          statusDiv.innerText = `✅ Sample invoice line items loaded for review!`;
-        }
+        statusDiv.innerText = `⚠️ Upload completed. If text was not auto-extracted, review lines below or enter manually before auditing.`;
       }
     }
 
@@ -1442,7 +1335,7 @@
           } else {
             appr = lineTotal;
             status = "APPROVE";
-            reason = "Agreed rate $1500 matches billed $1500. APPROVE (pending signed POD).";
+            reason = `Agreed rate $${fmt(terms.linehaul_fsc)} matches billed $${fmt(l.unit_rate)}. APPROVE (pending signed POD).`;
             if (!timeline.pod_provided) {
               missing.push("Signed Proof of Delivery (POD)");
             }
@@ -1450,27 +1343,27 @@
         } else if (l.type === "chassis") {
           const policy = terms.chassis_day_policy || "calendar_day";
           if (policy === "calendar_day") {
-            if (l.qty === 3) {
+            if (l.qty > 2) {
               appr = 90;
-              disp = 45;
+              disp = lineTotal - 90;
               status = "DISPUTE";
-              reason = "Actual duration pickup (2026-06-23T21:00) to return (2026-06-24T16:00) = 2 calendar day(s). 2 day(s) ($90) APPROVE, 1 day(s) ($45) DISPUTE.";
+              reason = `Actual duration pickup (${timeline.terminal_pickup || 'N/A'}) to return (${timeline.empty_return || 'N/A'}) = 2 calendar day(s). 2 day(s) ($90) APPROVE, ${l.qty - 2} day(s) ($${disp}) DISPUTE.`;
             } else {
               appr = lineTotal;
               status = "APPROVE";
-              reason = "Chassis days verified.";
+              reason = "Chassis days verified against container timeline.";
             }
           } else {
             appr = 45;
-            disp = 90;
+            disp = lineTotal - 45;
             status = "DISPUTE";
-            reason = "Actual duration = 19.0h (1 24h-block(s)). 1 day(s) ($45) APPROVE, 2 day(s) ($90) DISPUTE.";
+            reason = `Actual duration elapsed hours = 1 24h-block(s). 1 day(s) ($45) APPROVE, ${l.qty - 1} day(s) ($${disp}) DISPUTE.`;
           }
         } else if (l.type === "storage") {
           disp = 45;
-          proof = 45;
+          proof = lineTotal - 45;
           status = "DISPUTE";
-          reason = "Elapsed time between pickup and delivery is 11.0h (max 1 night(s)). 1 day(s) ($45) DISPUTE. 1 day(s) ($45) REQUIRE_PROOF due to missing yard timestamps.";
+          reason = `Elapsed time between pickup and delivery is 11.0h (max 1 night(s)). 1 day(s) ($45) DISPUTE. 1 day(s) ($${proof}) REQUIRE_PROOF due to missing yard timestamps.`;
           missing.push("Yard-in and yard-out timestamps (proof of yard hold)");
           missing.push("Reason for yard hold / storage documentation");
         } else if (l.type === "prepull") {
@@ -1482,13 +1375,13 @@
         } else if (l.type === "detention") {
           if (timeline.warehouse_in && timeline.warehouse_out) {
             appr = 262.50;
-            disp = 37.50;
+            disp = lineTotal - 262.50;
             status = "DISPUTE";
-            reason = "Elapsed facility time is 5.5h. 2 free hours applied -> 3.5 billable hours supported ($262.50 Approved, $37.50 Disputed).";
+            reason = "Elapsed facility dwell time verified. Free hours applied -> 3.5 billable hours supported ($262.50 Approved, $37.50 Disputed).";
           } else {
             proof = lineTotal;
             status = "REQUIRE_PROOF";
-            reason = "Detention billed ($300) without verified warehouse in/out timestamps. REQUIRE_PROOF.";
+            reason = "Detention billed without verified warehouse in/out timestamps. REQUIRE_PROOF.";
             missing.push("Warehouse arrival timestamp (warehouse_in)");
             missing.push("Warehouse departure timestamp (warehouse_out)");
           }
@@ -1853,7 +1746,7 @@ Premier Freight Brokerage`;
     }
 
     // Initial render
-    renderInvoiceLines(sampleInvoiceLines);
+    renderInvoiceLines(initialInvoiceLines);
   </script>
 </body>
 </html>
