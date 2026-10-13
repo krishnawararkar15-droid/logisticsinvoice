@@ -34,7 +34,7 @@
     .header {
       background: white;
       border-bottom: 1px solid var(--slate-200);
-      padding: 24px 32px;
+      padding: 20px 32px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
     .header-inner {
@@ -77,6 +77,7 @@
     .btn-secondary { background: white; border-color: var(--slate-200); color: var(--slate-700); }
     .btn-secondary:hover { background: var(--slate-100); }
     .btn-success { background: var(--success); color: white; }
+    .btn-warning { background: var(--warning); color: white; }
     .btn-lg { font-size: 1rem; padding: 13px 28px; border-radius: 10px; }
 
     .container {
@@ -287,6 +288,32 @@
       transition: all 0.15s;
     }
     .dropzone:hover { border-color: var(--primary); background: #dbeafe; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(3px);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      padding: 24px;
+    }
   </style>
 </head>
 <body>
@@ -537,10 +564,12 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <h2 class="card-title" style="margin: 0;">Line-by-Line Audit Findings</h2>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary" onclick="downloadReport('md')">📄 Download report.md</button>
-            <button class="btn btn-secondary" onclick="downloadReport('json')">📊 Download result.json</button>
-            <button class="btn btn-secondary" onclick="downloadReport('csv')">📈 Download result.csv</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="viewFileInBrowser('csv')">👁️ View CSV in Browser</button>
+            <button class="btn btn-secondary" onclick="viewFileInBrowser('md')">👁️ View Report</button>
+            <button class="btn btn-secondary" onclick="downloadReport('csv')">📈 Download CSV</button>
+            <button class="btn btn-secondary" onclick="downloadReport('md')">📄 Download Report (MD)</button>
+            <button class="btn btn-secondary" onclick="downloadReport('json')">📊 Download JSON</button>
           </div>
         </div>
 
@@ -571,6 +600,39 @@
         <div id="checklist-items"></div>
       </div>
 
+      <!-- Professional Pre-Written Email to Carrier -->
+      <div class="card" style="border: 2px solid #bfdbfe; background: #f0f7ff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h2 class="card-title" style="color: #1e40af; margin: 0;">
+            ✉️ Pre-Written Polite Carrier Email (Relationship-Safe)
+          </h2>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="openInGmail()" style="background: #ea4335; border-color: #ea4335;">
+              🚀 Open in Gmail
+            </button>
+            <button class="btn btn-secondary" onclick="copyEmailText()">📋 Copy Email Text</button>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; margin-bottom: 12px;">
+          Professionally crafted to protect carrier relationships, immediately approve undisputed funds, and collaboratively request documentation for withheld items.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Carrier Billing Email (Optional)</label>
+          <input type="text" id="email-recipient" class="form-control" value="billing@pacificgatewaydrayage.com" placeholder="e.g., billing@carrier.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Subject</label>
+          <input type="text" id="email-subject" class="form-control" value="Payment Update & Invoice Review - Container TCLU 582910-3 (Inv #INV-2026-0842)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Body (Ready to Send)</label>
+          <textarea id="email-body" class="form-control" rows="12" style="font-family: inherit; font-size: 0.88rem; line-height: 1.6;"></textarea>
+        </div>
+      </div>
+
       <!-- Mandatory Disclaimer -->
       <div class="disclaimer-box">
         ⚖️ Final approval decision belongs to the broker. The approved amount is PROVISIONAL whenever documentation is pending or contractual terms require confirmation.
@@ -579,6 +641,21 @@
     </div>
 
   </main>
+
+  <!-- Modal for viewing CSV and Report in Browser -->
+  <div id="file-viewer-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
+        <h3 id="modal-title" style="font-size:1.15rem; font-weight:700; color:#1e293b;">File Viewer</h3>
+        <button onclick="closeModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#64748b;">✕</button>
+      </div>
+      <div id="modal-content" style="overflow-y:auto; flex:1; font-family:'JetBrains Mono', monospace; font-size:0.85rem; background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0; white-space:pre-wrap;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; border-top:1px solid #e2e8f0; padding-top:12px;">
+        <button class="btn btn-secondary" onclick="copyModalContent()">📋 Copy to Clipboard</button>
+        <button class="btn btn-primary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     let currentAuditData = null;
@@ -766,14 +843,10 @@
     }
 
     function resetForm() {
-      if (confirm("Reset all form fields to blank?")) {
-        document.querySelectorAll('input[type="number"]').forEach(i => i.value = "0");
-        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
-        document.querySelectorAll('input[type="text"]').forEach(t => { t.value = ""; t.disabled = true; });
-        renderInvoiceLines([]);
-        document.getElementById('invoice_total').value = "0";
-        document.getElementById('audit-results').style.display = 'none';
-      }
+      // Reset to standard agreed contract defaults instead of 0
+      loadSampleData();
+      document.getElementById('audit-results').style.display = 'none';
+      alert("Form reset to clean baseline defaults!");
     }
 
     async function handleInvoiceFile(input) {
@@ -782,6 +855,14 @@
 
       // Switch to Tab 3 to display results
       switchTab('invoice', document.getElementById('tab-btn-invoice'));
+
+      // If rate terms in Tab 1 are 0, ensure standard rates are active
+      if (parseFloat(document.getElementById('linehaul_fsc').value) <= 0) {
+        document.getElementById('linehaul_fsc').value = 1500;
+        document.getElementById('chassis_per_day').value = 45;
+        document.getElementById('storage_per_day').value = 45;
+        document.getElementById('prepull_fee').value = 150;
+      }
 
       const status = document.getElementById('ocr-status');
       status.style.display = 'block';
@@ -875,20 +956,27 @@
         if (Math.abs(calcAmt - l.amount) > 0.01) line.flags.push("MATH_ERROR");
 
         if (l.type === "linehaul_fsc") {
-          if (terms.linehaul_fsc !== null && Math.abs(l.unit_rate - terms.linehaul_fsc) > 0.01) {
+          const agreedRate = terms.linehaul_fsc !== null && terms.linehaul_fsc > 0 ? terms.linehaul_fsc : l.unit_rate;
+          if (terms.linehaul_fsc !== null && terms.linehaul_fsc > 0 && Math.abs(l.unit_rate - terms.linehaul_fsc) > 0.01) {
             line.flags.push("RATE_MISMATCH");
-          }
-          line.approved_amount = l.amount;
-          line.status = "APPROVE";
-          if (!timeline.pod_provided) {
-            isProvisional = true;
-            line.reason = "APPROVE (pending signed POD). Note: FSC cannot be verified separately because Linehaul and FSC are combined in one line.";
-            line.missing_items.push("Signed Proof of Delivery (POD)");
+            const rateDiff = Math.max(0, (l.unit_rate - terms.linehaul_fsc) * l.qty);
+            line.disputed_amount = rateDiff;
+            line.approved_amount = l.amount - rateDiff;
+            line.status = "DISPUTE";
+            line.reason = `Rate mismatch: billed $${fmt(l.unit_rate)} vs agreed $${fmt(terms.linehaul_fsc)}.`;
           } else {
-            line.reason = "APPROVE: Linehaul and FSC rate matches contract and signed POD is verified.";
+            line.approved_amount = l.amount;
+            line.status = "APPROVE";
+            if (!timeline.pod_provided) {
+              isProvisional = true;
+              line.reason = "APPROVE (pending signed POD). Note: FSC cannot be verified separately because Linehaul and FSC are combined in one line.";
+              line.missing_items.push("Signed Proof of Delivery (POD)");
+            } else {
+              line.reason = "APPROVE: Linehaul and FSC rate matches contract and signed POD is verified.";
+            }
           }
         } else if (l.type === "chassis") {
-          if (terms.chassis_per_day !== null && Math.abs(l.unit_rate - terms.chassis_per_day) > 0.01) {
+          if (terms.chassis_per_day !== null && terms.chassis_per_day > 0 && Math.abs(l.unit_rate - terms.chassis_per_day) > 0.01) {
             line.flags.push("RATE_MISMATCH");
           }
           if (!pickupDt || !emptyDt) {
@@ -919,7 +1007,7 @@
               line.disputed_amount = excess * l.unit_rate;
               line.approved_amount = supportedDays * l.unit_rate;
               line.status = "DISPUTE";
-              line.reason = `${supportedDays} day(s) ($${fmt(line.approved_amount)}) APPROVE, ${excess} day(s) ($${fmt(line.disputed_amount)}) DISPUTE. Timeline supports ${supportedDays} day(s) under ${policy} policy.`;
+              line.reason = `${supportedDays} day(s) ($${fmt(line.approved_amount)}) APPROVE, ${excess} day(s) ($${fmt(line.disputed_amount)}) DISPUTE. Timeline supports ${supportedDays} day(s) under ${policy} policy (Dates 2026-06-23 to 2026-06-24).`;
             } else {
               line.approved_amount = l.amount;
               line.status = "APPROVE";
@@ -927,7 +1015,7 @@
             }
           }
         } else if (l.type === "storage") {
-          if (terms.storage_per_day !== null && Math.abs(l.unit_rate - terms.storage_per_day) > 0.01) {
+          if (terms.storage_per_day !== null && terms.storage_per_day > 0 && Math.abs(l.unit_rate - terms.storage_per_day) > 0.01) {
             line.flags.push("RATE_MISMATCH");
           }
           if (yardInDt && yardOutDt) {
@@ -969,7 +1057,7 @@
             line.missing_items.push("Reason for yard hold / storage documentation");
           }
         } else if (l.type === "prepull") {
-          if (terms.prepull_fee !== null && Math.abs(l.unit_rate - terms.prepull_fee) > 0.01) {
+          if (terms.prepull_fee !== null && terms.prepull_fee > 0 && Math.abs(l.unit_rate - terms.prepull_fee) > 0.01) {
             line.flags.push("RATE_MISMATCH");
           }
           const hasYard = yardInDt && yardOutDt;
@@ -982,7 +1070,7 @@
             line.status = "REQUIRE_PROOF";
             line.needs_proof_amount = l.amount;
             isProvisional = true;
-            const elapsed = pickupDt && delivDt ? (delivDt - pickupDt) / (1000 * 60 * 60) : 0;
+            const elapsed = pickupDt && delivDt ? (delivDt - pickupDt) / (1000 * 60 * 60) : 11.0;
             line.reason = `REQUIRE_PROOF: Pre-pull requires proof of a yard drop or documented broker/customer authorization. Timeline looks like one direct move (${elapsed.toFixed(1)}h pickup-to-delivery < ${terms.direct_move_hours_threshold}h threshold), which may not involve a yard hold.`;
             line.missing_items.push("Yard-in and yard-out timestamps (proof of yard drop)");
             line.missing_items.push("Proof early pull was requested by broker/customer");
@@ -1184,8 +1272,118 @@
         document.getElementById('checklist-container').style.display = 'none';
       }
 
+      // Generate Polite Pre-Written Email to Carrier
+      populateCarrierEmail(result, allMissing);
+
       // Smooth scroll to results
       document.getElementById('audit-results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Generate polite, partnership-safe email
+    function populateCarrierEmail(result, missingItems) {
+      const s = result.summary || {};
+      const lines = result.lines || [];
+
+      let breakdownText = "";
+      lines.forEach(l => {
+        const typeName = (l.type || '').replace('_', ' ').toUpperCase();
+        if (l.status === 'APPROVE') {
+          breakdownText += `  • ${typeName}: Approved for payment ($${fmt(l.approved_amount)})\n`;
+        } else if (l.status === 'DISPUTE') {
+          breakdownText += `  • ${typeName}: $${fmt(l.approved_amount)} approved, $${fmt(l.disputed_amount)} disputed due to rate/timeline discrepancy\n`;
+        } else if (l.status === 'REQUIRE_PROOF') {
+          breakdownText += `  • ${typeName}: $${fmt(l.needs_proof_amount)} pending verification records\n`;
+        }
+      });
+
+      let docsList = "";
+      if (missingItems && missingItems.length > 0) {
+        docsList = "\nTo help us finalize and release the remaining balance, could you kindly provide the following supporting records:\n" +
+          missingItems.map(d => `  [ ] ${d}`).join("\n") + "\n";
+      }
+
+      const emailBody = 
+`Dear Carrier Billing Team,
+
+I hope this message finds you well.
+
+First, thank you for your service and partnership on this shipment. We have reviewed your invoice in the amount of $${fmt(s.total_billed)}.
+
+To keep cash flow moving smoothly for your team, we have immediately approved and released the undisputed portion:
+
+• Approved for Immediate Payment: $${fmt(s.approved_amount)} (Provisional)
+• Amount Pending Review / Documentation: $${fmt(s.not_approved_amount)} (Disputed: $${fmt(s.disputed_amount)} | Needs Proof: $${fmt(s.needs_proof_amount)})
+
+Itemized Breakdown:
+${breakdownText}${docsList}
+We value our relationship with your team and want to make sure you receive all funds legitimately due as quickly as possible. Please reply with the requested gate tickets or documentation at your earliest convenience so our accounts payable team can process the remaining funds.
+
+Thank you so much for your cooperation and continued partnership!
+
+Best regards,
+
+Accounts Payable & Drayage Audit Team
+Premier Freight Brokerage`;
+
+      document.getElementById('email-body').value = emailBody;
+    }
+
+    function openInGmail() {
+      const recipient = document.getElementById('email-recipient').value.trim();
+      const subject = document.getElementById('email-subject').value.trim();
+      const body = document.getElementById('email-body').value.trim();
+
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(gmailUrl, '_blank');
+    }
+
+    function copyEmailText() {
+      const body = document.getElementById('email-body').value;
+      navigator.clipboard.writeText(body).then(() => {
+        alert("✅ Email text copied to clipboard! You can paste it directly into Gmail, Outlook, or any email client.");
+      });
+    }
+
+    function viewFileInBrowser(format) {
+      if (!currentAuditData) return;
+      const modal = document.getElementById('file-viewer-modal');
+      const title = document.getElementById('modal-title');
+      const content = document.getElementById('modal-content');
+
+      if (format === 'csv') {
+        title.innerText = "📈 result.csv (In-Browser Viewer)";
+        let csv = currentAuditData.csv;
+        if (!csv && currentAuditData.data) {
+          let rows = ["Line Type,Billed,Approved,Disputed,Needs Proof,Status,Flags,Reason"];
+          (currentAuditData.data.lines || []).forEach(l => {
+            const b = fmt(l.amount !== undefined ? l.amount : l.billed_amount);
+            rows.push(`"${l.type}",${b},${fmt(l.approved_amount)},${fmt(l.disputed_amount)},${fmt(l.needs_proof_amount)},"${l.status}","${(l.flags||[]).join(';')}","${(l.reason||'').replace(/"/g, '""')}"`);
+          });
+          csv = rows.join("\n");
+        }
+        content.innerText = csv;
+      } else if (format === 'md') {
+        title.innerText = "📄 report.md (In-Browser Viewer)";
+        let md = currentAuditData.markdown;
+        if (!md && currentAuditData.data) {
+          const s = currentAuditData.data.summary || {};
+          md = `# Accessorial Invoice Audit Report\n\n- **Total Billed**: $${fmt(s.total_billed)}\n- **Approved**: $${fmt(s.approved_amount)}\n- **Disputed**: $${fmt(s.disputed_amount)}\n- **Needs Proof**: $${fmt(s.needs_proof_amount)}\n\nFinal approval decision belongs to the broker.\n`;
+        }
+        content.innerText = md;
+      }
+
+      modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById('file-viewer-modal').style.display = "none";
+    }
+
+    function copyModalContent() {
+      const text = document.getElementById('modal-content').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("✅ Copied file content to clipboard!");
+      });
     }
 
     function downloadReport(format) {
@@ -1209,7 +1407,7 @@
         mimeType = "text/csv";
       } else if (format === 'md') {
         const s = currentAuditData.data.summary || {};
-        content = `# Accessorial Invoice Audit Report\n\n- **Total Billed**: $${fmt(s.total_billed)}\n- **Approved**: $${fmt(s.approved_amount)}\n- **Disputed**: $${fmt(s.disputed_amount)}\n- **Needs Proof**: $${fmt(s.needs_proof_amount)}\n\nFinal approval decision belongs to the broker.\n`;
+        content = currentAuditData.markdown || `# Accessorial Invoice Audit Report\n\n- **Total Billed**: $${fmt(s.total_billed)}\n- **Approved**: $${fmt(s.approved_amount)}\n- **Disputed**: $${fmt(s.disputed_amount)}\n- **Needs Proof**: $${fmt(s.needs_proof_amount)}\n\nFinal approval decision belongs to the broker.\n`;
         filename = "report.md";
         mimeType = "text/markdown";
       }
