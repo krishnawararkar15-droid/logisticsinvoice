@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel
 
+from src.batch import batch_audit_invoices
 from src.ocr import parse_invoice_text, process_invoice
 from src.report import (
     build_csv_report,
@@ -100,6 +101,17 @@ class AuditPayload(BaseModel):
     invoice: Dict[str, Any]
 
 
+class BatchAuditPayload(BaseModel):
+    invoices: List[Dict[str, Any]]
+    terms: Optional[Dict[str, Any]] = None
+    timeline: Optional[Dict[str, Any]] = None
+
+
+class DisputePacketPayload(BaseModel):
+    audit_data: Dict[str, Any]
+    metadata: Optional[Dict[str, Any]] = None
+
+
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
@@ -156,6 +168,84 @@ async def extract_ocr(file: UploadFile = File(...)):
         return {"success": True, "data": parsed}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR Extraction failed: {str(e)}")
+
+
+@app.post("/api/ratecon")
+@app.post("/ratecon")
+async def extract_ratecon(file: UploadFile = File(...)):
+    try:
+        try:
+            from src.ratecon import parse_ratecon_file
+        except ImportError:
+            raise HTTPException(
+                status_code=501,
+                detail="Rate confirmation parser module (src.ratecon) is not available",
+            )
+        file_bytes = await file.read()
+        filename = getattr(file, "filename", "ratecon.pdf")
+        import inspect
+
+        sig = inspect.signature(parse_ratecon_file)
+        if "filename" in sig.parameters:
+            parsed = parse_ratecon_file(file_bytes, filename=filename)
+        else:
+            parsed = parse_ratecon_file(file_bytes)
+        return {"success": True, "data": parsed}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rate Con parsing failed: {str(e)}")
+
+
+@app.post("/api/dispute-packet")
+@app.post("/dispute-packet")
+def generate_dispute_packet_endpoint(payload: DisputePacketPayload):
+    try:
+        try:
+            from src.dispute_pdf import generate_dispute_packet_pdf
+        except ImportError:
+            raise HTTPException(
+                status_code=501,
+                detail="Dispute packet PDF generator module (src.dispute_pdf) is not available",
+            )
+        metadata = payload.metadata or {}
+        import inspect
+
+        sig = inspect.signature(generate_dispute_packet_pdf)
+        if "metadata" in sig.parameters:
+            pdf_bytes = generate_dispute_packet_pdf(payload.audit_data, metadata=metadata)
+        else:
+            try:
+                pdf_bytes = generate_dispute_packet_pdf(payload.audit_data, metadata)
+            except TypeError:
+                pdf_bytes = generate_dispute_packet_pdf(payload.audit_data)
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=Dispute_Packet.pdf"},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Dispute packet generation failed: {str(e)}"
+        )
+
+
+@app.post("/api/batch-audit")
+@app.post("/batch-audit")
+def run_batch_audit(payload: BatchAuditPayload):
+    try:
+        terms = payload.terms or {}
+        timeline = payload.timeline or {}
+        result = batch_audit_invoices(payload.invoices, terms, timeline)
+        return {"success": True, "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 @app.get("/", response_class=HTMLResponse)
