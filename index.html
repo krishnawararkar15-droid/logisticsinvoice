@@ -41,10 +41,6 @@
       --email-card-border: #bfdbfe;
       --modal-bg: #ffffff;
       --quick-bar-bg: #ffffff;
-      --doc-card-bg: #ffffff;
-      --doc-card-border: #e2e8f0;
-      --doc-card-verified-bg: #f0fdf4;
-      --doc-card-verified-border: #86efac;
     }
 
     body.dark-mode {
@@ -67,10 +63,6 @@
       --email-card-border: #1e40af;
       --modal-bg: #131d33;
       --quick-bar-bg: #131d33;
-      --doc-card-bg: #131d33;
-      --doc-card-border: #24324f;
-      --doc-card-verified-bg: #064e3b;
-      --doc-card-verified-border: #059669;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -176,7 +168,7 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
-    }}
+    }
     .tab-btn.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
@@ -342,140 +334,41 @@
       color: #93c5fd;
     }
 
-    /* Real-World Document Verification Center */
-    .doc-verify-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    /* Minimalist Document Verification Table */
+    .doc-row.verified {
+      background: rgba(34, 197, 94, 0.06) !important;
     }
-    .doc-verify-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border-color);
+    body.dark-mode .doc-row.verified {
+      background: rgba(16, 185, 129, 0.08) !important;
     }
-    .doc-verify-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .doc-verify-progress {
-      font-size: 0.82rem;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fde68a;
-    }
-    body.dark-mode .doc-verify-progress {
-      background: #382404;
-      color: #fde68a;
-      border-color: #854d0e;
-    }
-    .doc-cards-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .doc-card-item {
-      border: 1px solid var(--doc-card-border);
-      border-radius: 10px;
-      background: var(--doc-card-bg);
-      padding: 16px 18px;
-      transition: all 0.2s ease;
-    }
-    .doc-card-item.verified {
-      border-color: var(--doc-card-verified-border);
-      background: var(--doc-card-verified-bg);
-    }
-    .doc-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .doc-card-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 0.96rem;
-      color: var(--text-main);
-    }
-    .doc-status-badge {
+    .doc-status-pill {
+      display: inline-block;
+      padding: 3px 9px;
       font-size: 0.76rem;
       font-weight: 700;
-      padding: 3px 10px;
       border-radius: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
     }
-    .doc-status-badge.pending {
+    .doc-status-pill.pending {
       background: #fffbeb;
       color: #b45309;
       border: 1px solid #fde68a;
     }
-    body.dark-mode .doc-status-badge.pending {
-      background: #2a1b05;
+    body.dark-mode .doc-status-pill.pending {
+      background: #2b1a04;
       color: #fde68a;
       border-color: #78350f;
     }
-    .doc-status-badge.cleared {
-      background: #dcfce7;
+    .doc-status-pill.verified {
+      background: #f0fdf4;
       color: #15803d;
       border: 1px solid #86efac;
     }
-    body.dark-mode .doc-status-badge.cleared {
+    body.dark-mode .doc-status-pill.verified {
       background: #064e3b;
       color: #6ee7b7;
       border-color: #059669;
-    }
-    .doc-chips-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin: 8px 0;
-    }
-    .doc-chip {
-      font-size: 0.74rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: var(--slate-100);
-      color: var(--text-label);
-      border: 1px solid var(--border-color);
-    }
-    body.dark-mode .doc-chip {
-      background: #1e293b;
-      color: #94a3b8;
-      border-color: #334155;
-    }
-    .doc-details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      font-size: 0.83rem;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed var(--border-color);
-    }
-    @media(max-width: 768px) {
-      .doc-details-grid { grid-template-columns: 1fr; }
-    }
-    .doc-detail-text strong {
-      color: var(--text-main);
     }
 
     .dropzone {
@@ -802,22 +695,37 @@
         </div>
       </div>
 
-      <!-- Professional US Freight Documentation Verification Center -->
-      <div class="doc-verify-section" id="checklist-container">
-        <div class="doc-verify-header">
-          <div class="doc-verify-title">
-            <span>📋</span> Real-World Documents Needed Before Final Approval
-          </div>
-          <div class="doc-verify-progress" id="doc-progress-text">
-            0 of 0 Documents Verified
-          </div>
+      <!-- Clean Minimalist Document Verification Table -->
+      <div class="card" id="checklist-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 class="card-title" style="margin: 0;">
+            📋 Required Supporting Documents Before Payment
+          </h2>
+          <span class="badge" id="doc-progress-text" style="background: #fef3c7; color: #92400e; font-size: 0.8rem; padding: 4px 12px; border: 1px solid #fde68a;">
+            0 of 3 Verified
+          </span>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          In accordance with US freight brokerage accounting standards (FMCSA 49 CFR & UIIA model interchange agreements), Accounts Payable must substantiate these specific carrier records before releasing withheld funds.
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px;">
+          The carrier must furnish these specific records before withheld funds can be cleared for final Accounts Payable remittance.
         </p>
-        <div class="doc-cards-grid" id="checklist-items">
-          <!-- Dynamically Injected Rich Verification Cards -->
+
+        <div class="table-responsive">
+          <table class="data-table" id="doc-checklist-table">
+            <thead>
+              <tr>
+                <th style="width: 60px; text-align: center;">Verify</th>
+                <th style="width: 250px;">Document Name</th>
+                <th style="width: 210px;">Applies to Charge</th>
+                <th>What Carrier Must Provide</th>
+                <th style="width: 140px; text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="checklist-items">
+              <!-- Dynamically populated clean rows -->
+            </tbody>
+          </table>
         </div>
+        <div id="contract-notes-container" style="margin-top: 12px;"></div>
       </div>
 
       <!-- Professional Pre-Written Email to Carrier -->
@@ -906,98 +814,6 @@
         updateThemeUI(false);
       }
     })();
-
-    // Industry Knowledge Registry for Real US Drayage & Freight Documents
-    const US_DOC_REGISTRY = {
-      "Signed Proof of Delivery (POD)": {
-        name: "Signed Proof of Delivery (POD) / Delivery Receipt (DR)",
-        icon: "✍️",
-        authority: "Receiving Consignee / Facility Inbound Clerk",
-        regulation: "FMCSA 49 CFR § 373.101 & Standard UIIA Delivery Terms",
-        criteria: "Legible consignee signature, printed receiving clerk name, delivery date, arrival/departure timestamps, and cargo seal integrity.",
-        rationale: "Mandatory condition precedent in US freight brokerage to release linehaul funds and invoice the shipper for completed delivery."
-      },
-      "Yard-in and yard-out timestamps (proof of yard hold)": {
-        name: "Carrier Yard In-Gate & Out-Gate Interchange Receipts (EIR)",
-        icon: "🏭",
-        authority: "Motor Carrier Secure Drop Yard Facility",
-        regulation: "UIIA Intermodal Interchange Protocols",
-        criteria: "Interchange gate ticket or automated yard management log with container number, chassis ID, and timestamp proving physical arrival and exit.",
-        rationale: "Substantiates that the container was physically held on-ground or on chassis at carrier facility rather than an unauthorized through-move."
-      },
-      "Reason for yard hold / storage documentation": {
-        name: "Documented Justification for Yard Storage Hold",
-        icon: "📋",
-        authority: "Shipper / Broker Dispatch / Consignee Operations",
-        regulation: "Broker-Carrier Agreement (Accessorial Authorization Clause)",
-        criteria: "Written confirmation of customer-requested delivery delay, weekend warehouse closure, or terminal restriction necessitating overnight staging.",
-        rationale: "Under US drayage agreements, carriers cannot bill yard storage if the container was held for carrier's own operational or driver convenience."
-      },
-      "Yard-in and yard-out timestamps (proof of yard drop)": {
-        name: "Drop Yard In-Gate Staging Receipt (Pre-Pull Staging)",
-        icon: "📦",
-        authority: "Carrier Secure Drop Lot Gate",
-        regulation: "UIIA Terminal Operations Protocol",
-        criteria: "In-gate time stamp showing container was received at carrier secure yard prior to the scheduled delivery appointment date.",
-        rationale: "Proves container was staged in carrier yard rather than moved direct from port terminal."
-      },
-      "Proof early pull was requested by broker/customer": {
-        name: "Written Pre-Pull Authorization or Terminal Last Free Day (LFD) Notice",
-        icon: "🛡️",
-        authority: "Broker Rate Confirmation Addendum / Ocean Steamship Line Notice",
-        regulation: "TIA Model Broker-Carrier Agreement",
-        criteria: "Broker written email/EDI authorization approving pre-pull fees ($150), OR Steamship Line Availability Notice demonstrating Last Free Day (LFD) demurrage avoidance.",
-        rationale: "Pre-pull fees are unauthorized by default in US freight brokerage unless pre-approved by broker or required to avoid port demurrage ($150-$300/day)."
-      },
-      "Warehouse arrival timestamp (warehouse_in)": {
-        name: "Time-Stamped Bill of Lading (BOL) or Certified ELD Duty Log (Arrival)",
-        icon: "⏱️",
-        authority: "Consignee Guard Shack / FMCSA Certified Telematics (ELD)",
-        regulation: "FMCSA 49 CFR § 395 (Electronic Logging Devices)",
-        criteria: "Security guard shack check-in stamp on BOL or tamper-proof GPS geofence arrival record proving arrival at or before scheduled appointment time.",
-        rationale: "Establishes baseline arrival time before calculating driver detention beyond the standard 2 free hours ($75/hr)."
-      },
-      "Warehouse departure timestamp (warehouse_out)": {
-        name: "Time-Stamped Bill of Lading (BOL) or Certified ELD Duty Log (Departure)",
-        icon: "🚪",
-        authority: "Facility Receiving Dock Clerk / Certified ELD Telematics",
-        regulation: "FMCSA 49 CFR § 395 (Electronic Logging Devices)",
-        criteria: "Signed receiving out-gate stamp with exact departure time or certified ELD duty status record ('On-Duty / Waiting at Dock').",
-        rationale: "Verifies actual hours driver was detained at facility to prevent unverified detention claims."
-      },
-      "Terminal pickup timestamp (terminal_pickup)": {
-        name: "Port / Rail Terminal Outgate Equipment Interchange Receipt (EIR / TIR / J1)",
-        icon: "🚢",
-        authority: "Marine Terminal / Rail Ramp Operating System (TOS)",
-        regulation: "UIIA Section G (Equipment Interchange)",
-        criteria: "Terminal J1 / EIR outgate receipt showing container number, chassis ID, driver CDL, seal number, and exact terminal outgate timestamp.",
-        rationale: "Defines the exact official start of chassis usage and verifies container terminal departure against demurrage free time."
-      },
-      "Empty return timestamp (empty_return)": {
-        name: "Port / Rail Terminal Empty Ingate Equipment Interchange Receipt (EIR / TIR / J1)",
-        icon: "🔄",
-        authority: "Marine Terminal / Ocean Carrier Container Yard (CY)",
-        regulation: "UIIA Equipment Return Protocols",
-        criteria: "Terminal J1 / EIR ingate receipt showing empty container return timestamp and equipment condition signoff.",
-        rationale: "Stops the clock on chassis daily usage fees and steamship line per diem charges."
-      }
-    };
-
-    function getDocProfile(itemKey) {
-      for (const [key, profile] of Object.entries(US_DOC_REGISTRY)) {
-        if (itemKey.includes(key) || key.includes(itemKey)) {
-          return profile;
-        }
-      }
-      return {
-        name: itemKey,
-        icon: "📄",
-        authority: "Motor Carrier / Facility Records",
-        regulation: "US Freight Standard Practice",
-        criteria: "Complete supporting documentation, time records, or authorization correspondence.",
-        rationale: "Substantiates invoice line item before final Accounts Payable disbursement."
-      };
-    }
 
     // State
     let currentAuditData = null;
@@ -1432,6 +1248,87 @@
       };
     }
 
+    // Clean, Minimalist Required Documents Deduplication Engine
+    function extractRequiredDocuments(result) {
+      const docs = [];
+      const lines = result.lines || [];
+
+      // 1. Signed Proof of Delivery (POD)
+      const linehaul = lines.find(l => l.type === 'linehaul_fsc');
+      const needsPod = (linehaul && (linehaul.missing_items || []).some(m => m.includes('POD'))) ||
+                       (result.documents_needed || []).some(m => m.includes('POD'));
+      if (needsPod) {
+        docs.push({
+          id: 'pod',
+          name: 'Signed Proof of Delivery (POD)',
+          icon: '✍️',
+          charge: 'Linehaul ($' + fmt(linehaul ? linehaul.amount : 0) + ')',
+          details: 'Delivery receipt signed and dated by consignee receiving clerk.'
+        });
+      }
+
+      // 2. Carrier Yard Gate Tickets (In / Out)
+      const storage = lines.find(l => l.type === 'storage');
+      const prepull = lines.find(l => l.type === 'prepull');
+      const needsYard = (storage && (storage.missing_items || []).some(m => m.toLowerCase().includes('yard'))) ||
+                        (prepull && (prepull.missing_items || []).some(m => m.toLowerCase().includes('yard'))) ||
+                        (result.documents_needed || []).some(m => m.toLowerCase().includes('yard'));
+      if (needsYard) {
+        const affected = [];
+        if (storage && storage.needs_proof_amount > 0) affected.push('Yard Storage ($' + fmt(storage.needs_proof_amount) + ')');
+        if (prepull && prepull.needs_proof_amount > 0) affected.push('Pre-pull ($' + fmt(prepull.needs_proof_amount) + ')');
+        docs.push({
+          id: 'yard',
+          name: 'Carrier Yard Interchange Tickets (In/Out)',
+          icon: '🏭',
+          charge: affected.length > 0 ? affected.join(' & ') : 'Storage Hold',
+          details: 'Time-stamped gate receipts proving container was physically staged in carrier yard.'
+        });
+      }
+
+      // 3. Written Pre-Pull Authorization
+      const needsPrepull = (prepull && (prepull.missing_items || []).some(m => m.toLowerCase().includes('pull') || m.toLowerCase().includes('lfd'))) ||
+                           (result.documents_needed || []).some(m => m.toLowerCase().includes('pull was requested') || m.toLowerCase().includes('lfd'));
+      if (needsPrepull) {
+        docs.push({
+          id: 'prepull_auth',
+          name: 'Written Pre-Pull Authorization',
+          icon: '📋',
+          charge: 'Pre-pull Fee ($' + fmt(prepull ? prepull.amount : 0) + ')',
+          details: 'Broker Rate Con addendum or steamship line Last Free Day (LFD) notice.'
+        });
+      }
+
+      // 4. Warehouse Detention Timestamps
+      const detention = lines.find(l => l.type === 'detention');
+      const needsDetention = detention && (detention.missing_items || []).some(m => m.toLowerCase().includes('warehouse'));
+      if (needsDetention) {
+        docs.push({
+          id: 'detention',
+          name: 'Time-Stamped BOL or Driver ELD Log',
+          icon: '⏱️',
+          charge: 'Detention ($' + fmt(detention ? detention.amount : 0) + ')',
+          details: 'Receiver in/out time stamps on BOL or certified ELD log verifying dwell over 2 free hours.'
+        });
+      }
+
+      // 5. Terminal Interchange (EIR / J1)
+      const chassis = lines.find(l => l.type === 'chassis');
+      const needsTerminal = (chassis && (chassis.missing_items || []).some(m => m.toLowerCase().includes('terminal') || m.toLowerCase().includes('return'))) ||
+                            (result.documents_needed || []).some(m => m.toLowerCase().includes('terminal_pickup') || m.toLowerCase().includes('empty_return'));
+      if (needsTerminal) {
+        docs.push({
+          id: 'terminal',
+          name: 'Terminal Interchange Receipts (EIR / J1)',
+          icon: '🚢',
+          charge: 'Chassis Fee ($' + fmt(chassis ? chassis.amount : 0) + ')',
+          details: 'Port/rail terminal outgate and empty return interchange receipts verifying equipment dates.'
+        });
+      }
+
+      return docs;
+    }
+
     // Render results
     function renderAuditResults(result) {
       document.getElementById('audit-results').style.display = 'block';
@@ -1495,7 +1392,7 @@
         tbody.appendChild(tr);
       });
 
-      // Render Real-World US Freight Documentation Verification Cards
+      // Render Clean Document Verification Table
       renderDocumentChecklist(result);
 
       // Generate Polite Pre-Written Email to Carrier
@@ -1505,102 +1402,96 @@
       document.getElementById('audit-results').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Render Rich Document Checklist
+    // Render Minimalist, Structured Document Checklist Table
     function renderDocumentChecklist(result) {
-      const container = document.getElementById('checklist-container');
       const itemsContainer = document.getElementById('checklist-items');
       const progressText = document.getElementById('doc-progress-text');
-      
-      const allMissing = [];
-      (result.lines || []).forEach(l => {
-        (l.missing_items || []).forEach(m => {
-          if (!allMissing.includes(m)) allMissing.push(m);
-        });
-      });
-      if (result.documents_needed) {
-        result.documents_needed.forEach(d => {
-          if (!allMissing.includes(d)) allMissing.push(d);
-        });
-      }
+      const notesContainer = document.getElementById('contract-notes-container');
 
+      const requiredDocs = extractRequiredDocuments(result);
       verifiedDocIndexes = new Set();
 
-      if (allMissing.length === 0) {
+      if (requiredDocs.length === 0) {
         progressText.innerText = "All Clear (0 Required)";
         progressText.style.background = "#dcfce7";
         progressText.style.color = "#15803d";
         itemsContainer.innerHTML = `
-          <div style="display:flex; align-items:center; gap:12px; padding:16px; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; color:#166534;">
-            <span style="font-size:1.5rem;">✅</span>
-            <div>
-              <div style="font-weight:700; font-size:0.95rem;">All Supporting Documentation Complete</div>
-              <div style="font-size:0.85rem; color:#15803d;">All required timestamps, delivery proofs, and gate interchange tickets have been verified. No outstanding documents needed from the carrier.</div>
-            </div>
-          </div>
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 20px; color: var(--success); font-weight: 600;">
+              ✅ All required delivery proofs and interchange tickets are complete. No additional documents needed from carrier.
+            </td>
+          </tr>
         `;
+        if (notesContainer) notesContainer.innerHTML = '';
         return;
       }
 
-      updateProgressCount(allMissing.length);
+      updateDocProgress(requiredDocs.length);
 
-      itemsContainer.innerHTML = allMissing.map((item, idx) => {
-        const profile = getDocProfile(item);
-        return `
-          <div class="doc-card-item" id="doc-card-${idx}">
-            <div class="doc-card-top">
-              <label class="doc-card-label" for="doc-chk-${idx}">
-                <input type="checkbox" id="doc-chk-${idx}" style="width:17px; height:17px; cursor:pointer;" onchange="toggleDocVerified(${idx}, ${allMissing.length})">
-                <span>${profile.icon} ${profile.name}</span>
-              </label>
-              <span class="doc-status-badge pending" id="doc-status-${idx}">⏳ Awaiting Carrier Submission</span>
-            </div>
-            <div class="doc-chips-row">
-              <span class="doc-chip">🏛️ ${profile.authority}</span>
-              <span class="doc-chip">📜 ${profile.regulation}</span>
-            </div>
-            <div class="doc-details-grid">
-              <div class="doc-detail-text">
-                <strong>Mandatory Audit Criteria:</strong> ${profile.criteria}
-              </div>
-              <div class="doc-detail-text">
-                <strong>Why Required Before Remittance:</strong> ${profile.rationale}
-              </div>
-            </div>
+      itemsContainer.innerHTML = requiredDocs.map((doc, idx) => `
+        <tr class="doc-row" id="doc-row-${idx}">
+          <td style="text-align: center; vertical-align: middle;">
+            <input type="checkbox" id="doc-chk-${idx}" style="width: 17px; height: 17px; cursor: pointer;" onchange="toggleDocVerified(${idx}, ${requiredDocs.length})">
+          </td>
+          <td style="font-weight: 700;">
+            <label for="doc-chk-${idx}" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <span>${doc.icon}</span> <span>${doc.name}</span>
+            </label>
+          </td>
+          <td style="color: var(--primary); font-weight: 600;">
+            ${doc.charge}
+          </td>
+          <td style="font-size: 0.83rem; color: var(--text-muted); line-height: 1.4;">
+            ${doc.details}
+          </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <span class="doc-status-pill pending" id="doc-status-${idx}">⏳ Pending</span>
+          </td>
+        </tr>
+      `).join('');
+
+      // Notes
+      if (result.documents_needed && result.documents_needed.some(d => d.includes('prepull_includes_first_storage_day'))) {
+        notesContainer.innerHTML = `
+          <div style="padding: 8px 12px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid var(--primary); border-radius: 4px; font-size: 0.82rem; color: var(--text-muted);">
+            ℹ️ <strong>Contract Note:</strong> Clarify whether agreed pre-pull fee ($150) includes the 1st day of yard storage (terms.prepull_includes_first_storage_day is null).
           </div>
         `;
-      }).join('');
+      } else {
+        notesContainer.innerHTML = '';
+      }
     }
 
     function toggleDocVerified(idx, totalCount) {
       const chk = document.getElementById(`doc-chk-${idx}`);
-      const card = document.getElementById(`doc-card-${idx}`);
-      const badge = document.getElementById(`doc-status-${idx}`);
+      const row = document.getElementById(`doc-row-${idx}`);
+      const status = document.getElementById(`doc-status-${idx}`);
 
       if (chk.checked) {
         verifiedDocIndexes.add(idx);
-        card.classList.add('verified');
-        badge.className = 'doc-status-badge cleared';
-        badge.innerText = '✅ Verified & Substantiated';
+        row.classList.add('verified');
+        status.className = 'doc-status-pill verified';
+        status.innerText = '✅ Verified';
       } else {
         verifiedDocIndexes.delete(idx);
-        card.classList.remove('verified');
-        badge.className = 'doc-status-badge pending';
-        badge.innerText = '⏳ Awaiting Carrier Submission';
+        row.classList.remove('verified');
+        status.className = 'doc-status-pill pending';
+        status.innerText = '⏳ Pending';
       }
 
-      updateProgressCount(totalCount);
+      updateDocProgress(totalCount);
     }
 
-    function updateProgressCount(totalCount) {
+    function updateDocProgress(totalCount) {
       const progressText = document.getElementById('doc-progress-text');
       const verified = verifiedDocIndexes.size;
-      progressText.innerText = `${verified} of ${totalCount} Documents Verified`;
+      progressText.innerText = `${verified} of ${totalCount} Verified`;
       if (verified === totalCount && totalCount > 0) {
         progressText.style.background = "#dcfce7";
         progressText.style.color = "#15803d";
       } else {
-        progressText.style.background = "";
-        progressText.style.color = "";
+        progressText.style.background = "#fef3c7";
+        progressText.style.color = "#92400e";
       }
     }
 
@@ -1622,10 +1513,10 @@
       });
 
       let docsList = "";
-      const missingItems = result.documents_needed || [];
-      if (missingItems && missingItems.length > 0) {
+      const requiredDocs = extractRequiredDocuments(result);
+      if (requiredDocs.length > 0) {
         docsList = "\nTo help us finalize and release the remaining balance, could you kindly provide the following supporting records:\n" +
-          missingItems.map(d => `  [ ] ${d}`).join("\n") + "\n";
+          requiredDocs.map(d => `  [ ] ${d.name} (${d.charge})`).join("\n") + "\n";
       }
 
       const emailBody = 
