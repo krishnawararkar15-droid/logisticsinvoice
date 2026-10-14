@@ -214,7 +214,7 @@ def parse_ratecon_text(raw_text: str) -> Dict[str, Any]:
 
     # Search for base/linehaul/freight/all-in/total flat rate
     lh_match = re.search(
-        r"(?:line[\s-]*haul(?:[\s/]*(?:base[\s-]*rate|fsc))?|base[\s-]*rate|freight(?:[\s-]*charge|[\s-]*rate)?|agreed[\s-]*rate|all[\s-]*in(?:[\s-]*rate)?|total[\s-]*flat|flat[\s-]*rate)\s*[:=\-]?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+        r"(?:line[\s-]*haul(?:[\s/]*(?:base[\s-]*rate|fsc|rate|amount|fee))?|base[\s-]*rate|freight(?:[\s-]*charge|[\s-]*rate)?|agreed[\s-]*rate|all[\s-]*in(?:[\s-]*rate)?|total[\s-]*flat|flat[\s-]*rate)\s*[:=\-]?\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
         text,
         re.IGNORECASE,
     )
