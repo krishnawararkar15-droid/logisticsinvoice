@@ -141,3 +141,42 @@ def test_fastapi_endpoints_integration():
     assert res_dp.status_code == 200
     assert res_dp.headers["content-type"] == "application/pdf"
     assert res_dp.content.startswith(b"%PDF-")
+
+
+def test_workspace_batch_dom_hierarchy():
+    """Verify that workspace-batch is NOT a child of workspace-single and all divs are balanced."""
+    from html.parser import HTMLParser
+    from pathlib import Path
+
+    html_path = Path(__file__).resolve().parent.parent / "index.html"
+    content = html_path.read_text(encoding="utf-8")
+
+    class DivHierarchyParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.stack = []
+            self.batch_parents = None
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "div":
+                d = dict(attrs)
+                eid = d.get("id", "")
+                if eid == "workspace-batch":
+                    self.batch_parents = [x for x in self.stack]
+                self.stack.append(eid)
+
+        def handle_endtag(self, tag):
+            if tag == "div" and self.stack:
+                self.stack.pop()
+
+    parser = DivHierarchyParser()
+    parser.feed(content)
+
+    # 1. Total unclosed divs must be exactly 0
+    assert len(parser.stack) == 0, f"Unclosed divs remain in index.html: {parser.stack}"
+
+    # 2. workspace-batch must NOT have workspace-single as an ancestor
+    assert "workspace-single" not in parser.batch_parents, (
+        f"workspace-batch is mistakenly nested inside workspace-single! Ancestors: {parser.batch_parents}"
+    )
+
