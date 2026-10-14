@@ -1,0 +1,57 @@
+{
+  "invoice_id": "INV-2026-7291",
+  "carrier_name": "Atlantic Intermodal Transport LLC",
+  "container_no": "ONEU 391028-4 (40HC)",
+  "bol_no": "ONEY 55192801",
+  "chassis_no": "MILE 40-55102",
+  "timeline": {
+    "terminal_pickup": "2026-07-01T18:00",
+    "yard_in": null,
+    "yard_out": null,
+    "warehouse_appointment": "2026-07-02T07:00",
+    "delivery_actual": "2026-07-02T11:00",
+    "warehouse_in": null,
+    "warehouse_out": null,
+    "empty_return": "2026-07-04T15:00",
+    "pod_provided": false,
+    "prepull_request_documented": null
+  },
+  "lines": [
+    {
+      "type": "linehaul_fsc",
+      "description": "All-In Container Linehaul + Fuel Surcharge (FSC)",
+      "qty": 1,
+      "unit_rate": 1850.0,
+      "amount": 1850.0
+    },
+    {
+      "type": "prepull",
+      "description": "Terminal Pre-Pull (Port Out-Gate to Staging Lot)",
+      "qty": 1,
+      "unit_rate": 160.0,
+      "amount": 160.0
+    },
+    {
+      "type": "chassis",
+      "description": "Tri-Axle Container Chassis Usage",
+      "qty": 3,
+      "unit_rate": 50.0,
+      "amount": 150.0
+    },
+    {
+      "type": "detention",
+      "description": "Receiver Unloading Driver Detention (Waiting Time)",
+      "qty": 2,
+      "unit_rate": 85.0,
+      "amount": 170.0
+    },
+    {
+      "type": "storage",
+      "description": "Yard Storage Hold (Weekend Facility Closure)",
+      "qty": 1,
+      "unit_rate": 60.0,
+      "amount": 60.0
+    }
+  ],
+  "total": 2390.0
+}

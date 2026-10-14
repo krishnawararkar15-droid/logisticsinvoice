@@ -328,10 +328,15 @@ NON_ITEM_PATTERN = re.compile(
     r"compliance|governed|movements\s*billed|herein|rendered\s*under|standard\s*terms|"
     r"interchange\s*and\s*facilities|agreement\s*\(uiia\)|statement:|page\s*\d+\s*of\s*\d+|"
     r"chassis\s*(?:number|#|id)|carrier\s*drop|drop\s*yard\s*:|"
-    r"port\s*terminal|delivery\s*facility|return\s*depot|consignee|"
+    r"port\s*terminal|delivery\s*facility|return\s*depot|"
+    r"consignee\s*:|consignee\s+receiving|delivery\s*facility\s*/\s*consignee|shipper\s*/\s*consignee|"
     r"remittance\s*dept|p\.?o\.?\s*box|logistics\s*llc|freight\s*logistics|"
     r"invoice\s*number|invoice\s*date|"
+    r"original\s+freight\s+billing|uiia\s+certified|electronic\s+remittance|billing\s+dept|remittance\s+inquiries|"
     r"container\s*#|container\s*no|tclu|msku|medu|cma|cosu|oneu|phone|tel|email|fax|date:|terms:)\b|"
+    r"\b(?:intermodal|drayage|freight|logistics|express|transport|trucking|cartage)\s+(?:llc|inc|corp|co\.|ltd|group)\b|"
+    r"\b(?:inc|llc|corp|co\.|ltd)\b.*?\b(?:invoice|freight\s*bill(?:ing)?)\b|"
+    r"\b(?:invoice|freight\s*bill(?:ing)?)\b.*?\b(?:inc|llc|corp|co\.|ltd)\b|"
     r"\bmc[\s#:]|\bdot[\s#:]"
     r")",
     re.IGNORECASE,
@@ -456,8 +461,8 @@ def _parse_line_values(line: str) -> Tuple[float, float, float]:
     cleaned = re.sub(r"\b(?:20|40|45|53)\s*(?:ft|'|foot|feet)\b", " ", cleaned, flags=re.I)
     # Strip tariff codes (e.g. Item 100-D)
     cleaned = re.sub(r"\bitem\s*[0-9]+-?[a-z]?\b", " ", cleaned, flags=re.I)
-    # Strip PRO / Invoice labels with numbers (e.g. PRO# 991823)
-    cleaned = re.sub(r"\b(?:pro|inv|invoice|po|bol|order)\s*#?\s*[0-9a-z-]+\b", " ", cleaned, flags=re.I)
+    # Strip PRO / Invoice labels with numbers (e.g. PRO# 991823, MC# 951820)
+    cleaned = re.sub(r"\b(?:pro|inv|invoice|po|bol|order|mc|dot|usdot|scac)\s*#?\s*[0-9a-z-]+\b", " ", cleaned, flags=re.I)
 
     num_matches = re.findall(r"\$?\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?)", cleaned)
     nums: List[float] = []
@@ -587,8 +592,9 @@ def parse_invoice_text(raw_text: str) -> Dict[str, Any]:
             has_nums_cur = bool(re.search(r"\$?\s*[0-9]+(?:\.[0-9]{2})?", current_line))
             next_category = _classify_line(next_line)
             has_nums_next = bool(re.search(r"\$?\s*[0-9]+(?:\.[0-9]{2})?", next_line))
+            is_non_item_next = bool(NON_ITEM_PATTERN.search(next_line)) or bool(HEADER_LINE_PATTERN.search(next_line))
 
-            if not has_nums_cur and has_nums_next and next_category is None:
+            if not has_nums_cur and has_nums_next and next_category is None and not is_non_item_next:
                 merged_line = f"{current_line} {next_line}"
                 idx += 1
 

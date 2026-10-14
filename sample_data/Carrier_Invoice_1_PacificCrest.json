@@ -1,0 +1,50 @@
+{
+  "invoice_id": "INV-2026-9482",
+  "carrier_name": "Pacific Crest Intermodal LLC",
+  "container_no": "TCLU 582910-3 (40HC)",
+  "bol_no": "MEDU 91823901",
+  "chassis_no": "DCLI 40-77192",
+  "timeline": {
+    "terminal_pickup": "2026-06-23T21:00",
+    "yard_in": null,
+    "yard_out": null,
+    "warehouse_appointment": "2026-06-24T08:00",
+    "delivery_actual": "2026-06-24T08:00",
+    "warehouse_in": null,
+    "warehouse_out": null,
+    "empty_return": "2026-06-25T17:00",
+    "pod_provided": false,
+    "prepull_request_documented": null
+  },
+  "lines": [
+    {
+      "type": "linehaul_fsc",
+      "description": "Base Container Drayage Linehaul + Fuel Surcharge (FSC)",
+      "qty": 1,
+      "unit_rate": 1650.0,
+      "amount": 1650.0
+    },
+    {
+      "type": "prepull",
+      "description": "Terminal Pre-Pull (Port Out-Gate to Carrier Yard Hold)",
+      "qty": 1,
+      "unit_rate": 175.0,
+      "amount": 175.0
+    },
+    {
+      "type": "chassis",
+      "description": "Intermodal Tri-Axle Chassis Usage Fee (Daily Rental)",
+      "qty": 4,
+      "unit_rate": 45.0,
+      "amount": 180.0
+    },
+    {
+      "type": "storage",
+      "description": "Carrier Secure Yard Storage Fee",
+      "qty": 2,
+      "unit_rate": 55.0,
+      "amount": 110.0
+    }
+  ],
+  "total": 2115.0
+}

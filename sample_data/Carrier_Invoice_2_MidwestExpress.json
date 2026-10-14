@@ -1,0 +1,50 @@
+{
+  "invoice_id": "INV-2026-5120",
+  "carrier_name": "Midwest Intermodal Express LLC",
+  "container_no": "MSKU 782014-9 (40HC)",
+  "bol_no": "MAEU 29104820",
+  "chassis_no": "TRAC 40-99210",
+  "timeline": {
+    "terminal_pickup": "2026-06-25T14:00",
+    "yard_in": null,
+    "yard_out": null,
+    "warehouse_appointment": "2026-06-26T09:00",
+    "delivery_actual": "2026-06-26T13:00",
+    "warehouse_in": null,
+    "warehouse_out": null,
+    "empty_return": "2026-06-27T11:00",
+    "pod_provided": false,
+    "prepull_request_documented": null
+  },
+  "lines": [
+    {
+      "type": "linehaul_fsc",
+      "description": "Intermodal Rail Ramp Base Drayage Linehaul",
+      "qty": 1,
+      "unit_rate": 1400.0,
+      "amount": 1400.0
+    },
+    {
+      "type": "linehaul_fsc",
+      "description": "Standard Fuel Surcharge (DOE Index 22.8%)",
+      "qty": 1,
+      "unit_rate": 320.0,
+      "amount": 320.0
+    },
+    {
+      "type": "chassis",
+      "description": "Pool Chassis Daily Usage Fee",
+      "qty": 2,
+      "unit_rate": 40.0,
+      "amount": 80.0
+    },
+    {
+      "type": "detention",
+      "description": "Consignee Facility Driver Detention (Waiting Time)",
+      "qty": 3,
+      "unit_rate": 75.0,
+      "amount": 225.0
+    }
+  ],
+  "total": 2025.0
+}

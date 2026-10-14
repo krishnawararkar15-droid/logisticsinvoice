@@ -1,0 +1,57 @@
+{
+  "invoice_id": "INV-2026-3840",
+  "carrier_name": "Gulf Coast Drayage & Logistics Inc",
+  "container_no": "CMAU 492018-7 (40HC)",
+  "bol_no": "CMDU 88192014",
+  "chassis_no": "FLEXI 40-19280",
+  "timeline": {
+    "terminal_pickup": "2026-06-28T10:00",
+    "yard_in": null,
+    "yard_out": null,
+    "warehouse_appointment": "2026-06-29T08:00",
+    "delivery_actual": "2026-06-29T09:30",
+    "warehouse_in": null,
+    "warehouse_out": null,
+    "empty_return": "2026-07-02T16:00",
+    "pod_provided": false,
+    "prepull_request_documented": null
+  },
+  "lines": [
+    {
+      "type": "linehaul_fsc",
+      "description": "Houston Port Container Drayage Base Rate",
+      "qty": 1,
+      "unit_rate": 1280.0,
+      "amount": 1280.0
+    },
+    {
+      "type": "linehaul_fsc",
+      "description": "Mandatory Port Fuel Surcharge (FSC)",
+      "qty": 1,
+      "unit_rate": 245.0,
+      "amount": 245.0
+    },
+    {
+      "type": "prepull",
+      "description": "Terminal Congestion Pre-Pull Move to Carrier Lot",
+      "qty": 1,
+      "unit_rate": 140.0,
+      "amount": 140.0
+    },
+    {
+      "type": "storage",
+      "description": "Overnight Carrier Yard Storage Fee",
+      "qty": 3,
+      "unit_rate": 50.0,
+      "amount": 150.0
+    },
+    {
+      "type": "chassis",
+      "description": "Intermodal Chassis Rental (Per Diem)",
+      "qty": 5,
+      "unit_rate": 45.0,
+      "amount": 225.0
+    }
+  ],
+  "total": 2040.0
+}
