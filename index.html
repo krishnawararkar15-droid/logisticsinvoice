@@ -938,9 +938,6 @@
             <button class="btn btn-primary" onclick="document.getElementById('batch-files-input').click()">
               📂 Upload Invoices (PDF/Image/JSON)
             </button>
-            <button class="btn btn-secondary" onclick="loadSampleBatchData()">
-              ⚡ Load Sample Batch (3 Invoices)
-            </button>
             <button class="btn btn-secondary" onclick="clearBatch()" style="color: var(--danger);">
               🗑️ Clear Batch
             </button>
@@ -2269,74 +2266,7 @@ Premier Freight Brokerage`;
       renderBatchQueue();
     }
 
-    function loadSampleBatchData() {
-      queuedBatchInvoices = [
-        {
-          invoice_id: "INV-2026-0840",
-          carrier_name: "Pacific Gateway Drayage LLC",
-          container_no: "MSKU 928371-2",
-          bol_no: "MAEU 2918401",
-          timeline: {
-            terminal_pickup: "2026-06-20T08:00",
-            delivery_actual: "2026-06-21T10:00",
-            empty_return: "2026-06-21T17:00",
-            pod_provided: true
-          },
-          lines: [
-            { type: "linehaul_fsc", qty: 1, unit_rate: 1500, amount: 1500 },
-            { type: "chassis", qty: 2, unit_rate: 45, amount: 90 }
-          ],
-          total: 1590
-        },
-        {
-          invoice_id: "INV-2026-0842",
-          carrier_name: "Pacific Gateway Drayage LLC",
-          container_no: "TCLU 582910-3",
-          bol_no: "MEDU 91823901",
-          timeline: {
-            terminal_pickup: "2026-06-23T21:00",
-            delivery_actual: "2026-06-24T08:00",
-            empty_return: "2026-06-24T16:00",
-            pod_provided: false
-          },
-          lines: [
-            { type: "linehaul_fsc", qty: 1, unit_rate: 1500, amount: 1500 },
-            { type: "prepull", qty: 1, unit_rate: 150, amount: 150 },
-            { type: "chassis", qty: 3, unit_rate: 45, amount: 135 },
-            { type: "storage", qty: 2, unit_rate: 45, amount: 90 }
-          ],
-          total: 1875
-        },
-        {
-          invoice_id: "INV-2026-0845",
-          carrier_name: "Harbor Express Drayage Inc",
-          container_no: "CMAU 481920-7",
-          bol_no: "CMDU 8192044",
-          timeline: {
-            terminal_pickup: "2026-06-25T07:00",
-            warehouse_in: "2026-06-25T09:00",
-            warehouse_out: "2026-06-25T13:00",
-            delivery_actual: "2026-06-25T13:00",
-            empty_return: "2026-06-25T18:00",
-            pod_provided: true
-          },
-          lines: [
-            { type: "linehaul_fsc", qty: 1, unit_rate: 1500, amount: 1500 },
-            { type: "detention", qty: 4, unit_rate: 75, amount: 300 },
-            { type: "hazmat_surcharge", qty: 1, unit_rate: 100, amount: 100 }
-          ],
-          total: 1900
-        }
-      ];
 
-      renderBatchQueue();
-      const statusMsg = document.getElementById('batch-status-message');
-      statusMsg.style.display = 'block';
-      statusMsg.style.background = '#f0fdf4';
-      statusMsg.style.color = '#15803d';
-      statusMsg.style.border = '1px solid #86efac';
-      statusMsg.innerHTML = `⚡ <strong>Loaded 3 Real-World Drayage Invoices into Queue:</strong> INV-2026-0840 (Clean Move), INV-2026-0842 (Overbilled Days), INV-2026-0845 (Excess Detention & Unagreed Surcharge). Click "Run Batch Audit" to cross-reference!`;
-    }
 
     function clearBatch() {
       queuedBatchInvoices = [];

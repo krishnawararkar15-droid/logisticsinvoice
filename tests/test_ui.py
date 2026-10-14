@@ -72,7 +72,7 @@ def test_index_html_contains_three_new_features():
     assert "mode-btn-batch" in html_content
     assert "Batch Multi-Invoice Audit" in html_content
     assert "batch-files-input" in html_content
-    assert "loadSampleBatchData" in html_content
+    assert "handleBatchFileInput" in html_content
     assert "triggerBatchAudit" in html_content
     assert "batch-drilldown-modal" in html_content
     assert "exportBatchCsv" in html_content
