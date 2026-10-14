@@ -2405,7 +2405,7 @@ Premier Freight Brokerage`;
 
         audited.push({
           invoice_index: idx,
-          invoice_id: inv.invoice_id || `INV-${idx + 1:03d}`,
+          invoice_id: inv.invoice_id || `INV-${String(idx + 1).padStart(3, '0')}`,
           carrier_name: inv.carrier_name || "Pacific Gateway Drayage LLC",
           container_no: inv.container_no || `CONT-${idx + 100}`,
           bol_no: inv.bol_no || `BOL-${idx + 100}`,
