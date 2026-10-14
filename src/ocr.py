@@ -106,32 +106,40 @@ def _is_pdf_input(file_input: Union[str, Path, bytes, bytearray, BinaryIO]) -> b
 
 
 def _prepare_payload(
-    file_input: Union[str, Path, bytes, bytearray, BinaryIO]
+    file_input: Union[str, Path, bytes, bytearray, BinaryIO],
+    filename: Optional[str] = None,
 ) -> Tuple[str, bytes, str]:
     """
     Extract filename, bytes, and MIME type for API multipart upload.
+    Supports PDF, PNG, JPG, JPEG, WEBP, TIFF, BMP, JFIF, TXT, JSON.
     """
+    inferred_name = filename
     if isinstance(file_input, (str, Path)):
         path = Path(file_input)
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {file_input}")
-        filename = path.name
+        inferred_name = inferred_name or path.name
         with open(path, "rb") as f:
             file_bytes = f.read()
     elif isinstance(file_input, (bytes, bytearray)):
         file_bytes = bytes(file_input)
-        if file_bytes.startswith(b"%PDF"):
-            filename = "document.pdf"
-        elif file_bytes.startswith(b"\x89PNG"):
-            filename = "image.png"
-        elif file_bytes.startswith(b"\xff\xd8"):
-            filename = "image.jpg"
-        elif file_bytes.startswith(b"II*\x00") or file_bytes.startswith(b"MM\x00*"):
-            filename = "image.tiff"
-        else:
-            filename = "document.pdf"
+        if not inferred_name:
+            if file_bytes.startswith(b"%PDF"):
+                inferred_name = "document.pdf"
+            elif file_bytes.startswith(b"\x89PNG"):
+                inferred_name = "image.png"
+            elif file_bytes.startswith(b"\xff\xd8"):
+                inferred_name = "image.jpg"
+            elif file_bytes.startswith(b"RIFF") and len(file_bytes) > 12 and file_bytes[8:12] == b"WEBP":
+                inferred_name = "image.webp"
+            elif file_bytes.startswith(b"BM"):
+                inferred_name = "image.bmp"
+            elif file_bytes.startswith(b"II*\x00") or file_bytes.startswith(b"MM\x00*"):
+                inferred_name = "image.tiff"
+            else:
+                inferred_name = "document.pdf"
     elif hasattr(file_input, "read"):
-        filename = getattr(file_input, "name", "document.pdf")
+        inferred_name = inferred_name or getattr(file_input, "name", "document.pdf")
         if hasattr(file_input, "seek"):
             file_input.seek(0)
         content = file_input.read()
@@ -141,34 +149,35 @@ def _prepare_payload(
     else:
         raise TypeError(f"Unsupported file_input type: {type(file_input)}")
 
-    ext = Path(filename).suffix.lower()
+    final_name = inferred_name or "document.pdf"
+    ext = Path(final_name).suffix.lower()
     mime_map = {
         ".pdf": "application/pdf",
         ".png": "image/png",
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
+        ".jfif": "image/jpeg",
+        ".webp": "image/webp",
+        ".bmp": "image/bmp",
         ".tif": "image/tiff",
         ".tiff": "image/tiff",
+        ".gif": "image/gif",
+        ".txt": "text/plain",
+        ".json": "application/json",
     }
-    mime_type = mime_map.get(ext, "application/pdf")
-    return filename, file_bytes, mime_type
+    mime_type = mime_map.get(ext, "application/octet-stream")
+    return final_name, file_bytes, mime_type
 
 
 def extract_text_ocr_space(
     file_input: Union[str, Path, bytes, bytearray, BinaryIO],
     api_key: Optional[str] = None,
     timeout: int = 30,
+    filename: Optional[str] = None,
 ) -> str:
     """
     Extract text from an invoice file using the OCR.Space API.
-
-    Args:
-        file_input: Path, bytes, or file-like object.
-        api_key: OCR.Space API key (defaults to environment or free key).
-        timeout: HTTP request timeout in seconds.
-
-    Returns:
-        Extracted raw text string.
+    Supports all image formats (PNG, JPG, WEBP, TIFF, BMP) and PDF.
     """
     effective_key = (
         api_key
@@ -176,10 +185,10 @@ def extract_text_ocr_space(
         or DEFAULT_OCR_SPACE_API_KEY
     )
 
-    filename, file_bytes, mime_type = _prepare_payload(file_input)
+    final_name, file_bytes, mime_type = _prepare_payload(file_input, filename=filename)
 
     files = {
-        "file": (filename, file_bytes, mime_type)
+        "file": (final_name, file_bytes, mime_type)
     }
     data = {
         "apikey": effective_key,
@@ -271,15 +280,29 @@ def extract_text(
     api_key: Optional[str] = None,
     timeout: int = 30,
     fallback_to_pdfplumber: bool = True,
+    filename: Optional[str] = None,
 ) -> str:
     """
     Primary extraction entry point.
-    Tries OCR.Space API, falling back to pdfplumber on failure or if offline.
+    Supports PDF and all image formats (PNG, JPG, JPEG, WEBP, TIFF, BMP).
+    If digital PDF, extracts locally via pdfplumber for instant speed and accuracy.
+    If scanned PDF or image, uses OCR.Space API.
     """
-    is_pdf = _is_pdf_input(file_input)
+    is_pdf = _is_pdf_input(file_input) or (bool(filename and filename.lower().endswith(".pdf")))
 
+    # Fast-path for digital PDFs: extract text instantly without network latency
+    if is_pdf and PDFPLUMBER_AVAILABLE:
+        try:
+            pdf_text = extract_text_pdfplumber(file_input)
+            if pdf_text and len(pdf_text.strip()) > 30:
+                logger.info("Instantly extracted %d chars via local pdfplumber", len(pdf_text))
+                return pdf_text
+        except Exception as exc:
+            logger.debug("Fast-path pdfplumber extraction note: %s", exc)
+
+    # Scanned PDF or Image: run OCR.Space API
     try:
-        return extract_text_ocr_space(file_input, api_key=api_key, timeout=timeout)
+        return extract_text_ocr_space(file_input, api_key=api_key, timeout=timeout, filename=filename)
     except Exception as exc:
         logger.warning("OCR.Space API extraction failed: %s", exc)
         if fallback_to_pdfplumber and is_pdf and PDFPLUMBER_AVAILABLE:
@@ -297,7 +320,20 @@ def extract_text_from_file(
 
 
 NON_ITEM_PATTERN = re.compile(
-    r"\b(?:broker|bill\s*to|shipment\s*details|llc|inc|corp|ltd|co\b|suite|street|avenue|blvd|way\b|attn|payable|remit|wire|routing|acct|account|bank|carrier\s*staging|port\s*terminal|out-gate|in-gate|bill\s*of\s*lading|container\s*#|container\s*no|tclu|msku|medu|cma|cosu|oneu|dot#|mc#|phone|tel|email|fax|date:|terms:|high\s*cube)\b",
+    r"(?:"
+    r"\b(?:broker|bill\s*to|shipment\s*details|remit|wire|routing|acct|account|bank|"
+    r"suite|street|avenue|blvd|way|attn|payable|"
+    r"scac|usdot|certified|edi\s*system|"
+    r"terminal\s*out-gate|terminal\s*in-gate|actual\s*delivery|appointment|"
+    r"compliance|governed|movements\s*billed|herein|rendered\s*under|standard\s*terms|"
+    r"interchange\s*and\s*facilities|agreement\s*\(uiia\)|statement:|page\s*\d+\s*of\s*\d+|"
+    r"chassis\s*(?:number|#|id)|carrier\s*drop|drop\s*yard\s*:|"
+    r"port\s*terminal|delivery\s*facility|return\s*depot|consignee|"
+    r"remittance\s*dept|p\.?o\.?\s*box|logistics\s*llc|freight\s*logistics|"
+    r"invoice\s*number|invoice\s*date|"
+    r"container\s*#|container\s*no|tclu|msku|medu|cma|cosu|oneu|phone|tel|email|fax|date:|terms:)\b|"
+    r"\bmc[\s#:]|\bdot[\s#:]"
+    r")",
     re.IGNORECASE,
 )
 
@@ -585,11 +621,13 @@ def process_invoice(
     file_input: Union[str, Path, bytes, bytearray, BinaryIO],
     api_key: Optional[str] = None,
     timeout: int = 30,
+    filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Extract text and parse structured drayage invoice data in one call.
+    Accepts PDF, image (PNG, JPG, WEBP, TIFF, BMP), and plain text.
     """
-    text = extract_text(file_input, api_key=api_key, timeout=timeout)
+    text = extract_text(file_input, api_key=api_key, timeout=timeout, filename=filename)
     return parse_invoice_text(text)
 
 

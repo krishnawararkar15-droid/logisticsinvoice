@@ -94,3 +94,38 @@ def test_save_and_load_review_data(tmp_path):
     assert loaded["total"] == 1650.0
     assert len(loaded["lines"]) == 2
     assert loaded["lines"][0]["type"] == "linehaul_fsc"
+
+
+def test_process_invoice_multiple_formats():
+    """Verify that process_invoice supports PDF and multi-format payload preparation."""
+    from src.ocr import _prepare_payload, process_invoice
+
+    # 1. Test PDF file extraction
+    pdf_path = Path(__file__).resolve().parent.parent / "sample_data" / "Carrier_Invoice_INV-2026-9482.pdf"
+    if pdf_path.exists():
+        res = process_invoice(pdf_path, filename="Carrier_Invoice_INV-2026-9482.pdf")
+        assert len(res["lines"]) == 4
+        assert res["total"] == 1875.0
+        types = [l["type"] for l in res["lines"]]
+        assert "linehaul_fsc" in types
+        assert "prepull" in types
+        assert "chassis" in types
+        assert "storage" in types
+
+    # 2. Test payload preparation for various image extensions
+    formats = [
+        ("invoice.png", "image/png"),
+        ("invoice.jpg", "image/jpeg"),
+        ("invoice.jpeg", "image/jpeg"),
+        ("invoice.webp", "image/webp"),
+        ("invoice.bmp", "image/bmp"),
+        ("invoice.tiff", "image/tiff"),
+        ("invoice.tif", "image/tiff"),
+        ("invoice.txt", "text/plain"),
+        ("invoice.json", "application/json"),
+    ]
+    for fname, expected_mime in formats:
+        name, bts, mime = _prepare_payload(b"dummy data", filename=fname)
+        assert name == fname
+        assert mime == expected_mime
+

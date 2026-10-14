@@ -378,14 +378,23 @@
       text-align: center;
       background: #eff6ff;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.15s ease-in-out;
     }
     body.dark-mode .dropzone {
       background: #0f1e38;
       border-color: #3b82f6;
     }
-    .dropzone:hover { border-color: var(--primary); background: #dbeafe; }
-    body.dark-mode .dropzone:hover { background: #132749; }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary) !important;
+      background: #dbeafe !important;
+      transform: scale(1.008);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.18);
+    }
+    body.dark-mode .dropzone:hover, body.dark-mode .dropzone.dragover {
+      background: #172d54 !important;
+      border-color: #60a5fa !important;
+      box-shadow: 0 4px 14px rgba(96,165,250,0.22);
+    }
 
     /* Modal */
     .modal-overlay {
@@ -527,17 +536,20 @@
     <div id="workspace-single">
 
       <!-- Upload Bar -->
-      <div class="card" style="padding: 16px 20px; background: var(--quick-bar-bg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="card dropzone" id="top-upload-dropzone" style="padding: 16px 20px; background: var(--quick-bar-bg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;"
+           ondragover="handleDropzoneDragOver(event, this)"
+           ondragleave="handleDropzoneDragLeave(event, this)"
+           ondrop="handleSingleInvoiceDrop(event, this)">
+        <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
           <span style="font-size: 1.5rem;">📄</span>
           <div>
             <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Upload Carrier Invoice</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Upload PDF invoice, scanned image, or JSON to auto-populate and audit line items</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Drop or upload any document (PDF, PNG, JPG, JPEG, WEBP, TIFF, BMP, TXT, JSON) to auto-extract line items</div>
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <input type="file" id="top-invoice-file" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.json" onchange="handleInvoiceFile(this)">
-          <button class="btn btn-primary" onclick="document.getElementById('top-invoice-file').click()">📂 Select Invoice File</button>
+          <input type="file" id="top-invoice-file" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.json,.txt,image/*,application/pdf" onchange="handleInvoiceFile(this)">
+          <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('top-invoice-file').click()">📂 Select Invoice File</button>
         </div>
       </div>
 
@@ -554,17 +566,20 @@
         </div>
 
         <!-- Rate Con Auto-Import Banner -->
-        <div style="background: rgba(30,64,175,0.04); border: 1px dashed var(--primary); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div class="dropzone" id="ratecon-dropzone" style="background: rgba(30,64,175,0.04); border: 1px dashed var(--primary); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; text-align: left;"
+             ondragover="handleDropzoneDragOver(event, this)"
+             ondragleave="handleDropzoneDragLeave(event, this)"
+             ondrop="handleRateconDrop(event, this)">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 1.6rem;">📑</span>
             <div>
               <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Auto-Import Contract Terms from Rate Confirmation (Rate Con)</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Upload broker Rate Con (PDF or image) to automatically populate agreed linehaul, chassis, storage, and detention terms</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Drop or upload broker Rate Con (PDF, PNG, JPG, TIFF, TXT) to automatically populate agreed linehaul, chassis, storage, and detention terms</div>
             </div>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="file" id="ratecon-file-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.txt" onchange="handleRateconFile(this)">
-            <button class="btn btn-primary" onclick="document.getElementById('ratecon-file-input').click()" style="box-shadow: 0 2px 8px rgba(30,64,175,0.2);">
+            <input type="file" id="ratecon-file-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.txt,image/*,application/pdf" onchange="handleRateconFile(this)">
+            <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('ratecon-file-input').click()" style="box-shadow: 0 2px 8px rgba(30,64,175,0.2);">
               📂 Auto-Fill from Rate Con
             </button>
           </div>
@@ -735,10 +750,13 @@
 
       <!-- OCR File Upload Dropzone -->
       <div style="margin-bottom: 20px;">
-        <div class="dropzone" onclick="document.getElementById('ocr-file').click()">
+        <div class="dropzone" id="tab-invoice-dropzone" onclick="document.getElementById('ocr-file').click()"
+             ondragover="handleDropzoneDragOver(event, this)"
+             ondragleave="handleDropzoneDragLeave(event, this)"
+             ondrop="handleSingleInvoiceDrop(event, this)">
           <p style="font-weight: 700; color: var(--primary); font-size: 1.05rem;">📄 Drag & Drop or Click to Upload Carrier Invoice</p>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Supports PDF, Image (PNG/JPG), and JSON files</p>
-          <input type="file" id="ocr-file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.json" onchange="handleInvoiceFile(this)">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Supports all formats: PDF, Images (PNG, JPG, JPEG, WEBP, TIFF, BMP), TXT, and JSON files</p>
+          <input type="file" id="ocr-file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.json,.txt,image/*,application/pdf" onchange="handleInvoiceFile(this)">
         </div>
         <div id="ocr-status" style="margin-top: 8px; font-size: 0.9rem; font-weight: 600; display: none;"></div>
       </div>
@@ -916,7 +934,7 @@
             </p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="file" id="batch-files-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.json" onchange="handleBatchFileInput(this)">
+            <input type="file" id="batch-files-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.json,.txt,image/*,application/pdf" onchange="handleBatchFileInput(this)">
             <button class="btn btn-primary" onclick="document.getElementById('batch-files-input').click()">
               📂 Upload Invoices (PDF/Image/JSON)
             </button>
@@ -930,9 +948,13 @@
         </div>
 
         <!-- Queued Invoices Dropzone & Queue Box -->
-        <div id="batch-empty-state" class="dropzone" onclick="document.getElementById('batch-files-input').click()" style="margin-bottom: 16px;">
+        <div id="batch-empty-state" class="dropzone" onclick="document.getElementById('batch-files-input').click()"
+             ondragover="handleDropzoneDragOver(event, this)"
+             ondragleave="handleDropzoneDragLeave(event, this)"
+             ondrop="handleBatchInvoicesDrop(event, this)"
+             style="margin-bottom: 16px;">
           <p style="font-weight: 700; color: var(--primary); font-size: 1.05rem;">📄 Drag & Drop Multiple Invoices Here or Click to Browse</p>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Select multiple carrier PDF invoices, scanned images, or JSON export files</p>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Supports all carrier invoice formats: PDF, PNG, JPG, JPEG, WEBP, TIFF, BMP, TXT, or JSON files</p>
         </div>
 
         <div id="batch-queue-container" style="display: none;">
@@ -1441,8 +1463,55 @@
       alert("Form has been reset to baseline defaults!");
     }
 
+    // Drag & Drop Handlers for all Dropzones
+    function handleDropzoneDragOver(e, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.add('dragover');
+    }
+
+    function handleDropzoneDragLeave(e, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('dragover');
+    }
+
+    function handleSingleInvoiceDrop(e, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleInvoiceFile({ files: files });
+      }
+    }
+
+    function handleBatchInvoicesDrop(e, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleBatchFileInput({ files: files });
+      }
+    }
+
+    function handleRateconDrop(e, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleRateconFile({ files: files });
+      }
+    }
+
+    // Global dragover safety
+    window.addEventListener('dragover', (e) => e.preventDefault(), false);
+    window.addEventListener('drop', (e) => e.preventDefault(), false);
+
     async function handleInvoiceFile(input) {
-      const file = input.files[0];
+      const file = input.files ? input.files[0] : (input.target ? input.target.files[0] : input);
       if (!file) return;
 
       switchTab('invoice', document.getElementById('tab-btn-invoice'));
