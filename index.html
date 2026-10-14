@@ -1259,11 +1259,18 @@
       };
 
       try {
-        const res = await fetch('/api/dispute-packet', {
+        let res = await fetch('/api/dispute_packet', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ audit_data: auditData, metadata: meta })
         });
+        if (!res.ok) {
+          res = await fetch('/api/dispute-packet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audit_data: auditData, metadata: meta })
+          });
+        }
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
@@ -2348,11 +2355,18 @@ Premier Freight Brokerage`;
       statusMsg.innerHTML = `⏳ Executing deterministic audit on ${queuedBatchInvoices.length} invoices...`;
 
       try {
-        const res = await fetch('/api/batch-audit', {
+        let res = await fetch('/api/batch_audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ invoices: queuedBatchInvoices, terms, timeline })
         });
+        if (!res.ok) {
+          res = await fetch('/api/batch-audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoices: queuedBatchInvoices, terms, timeline })
+          });
+        }
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
