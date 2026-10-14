@@ -647,7 +647,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Chassis Minimum Days</label>
-          <input type="number" id="chassis_min_days" class="form-control" value="0">
+          <input type="number" id="chassis_min_days" class="form-control" value="2">
         </div>
       </div>
 
@@ -667,6 +667,24 @@
         <div class="form-group">
           <label class="form-label">Direct Move Threshold (Hours)</label>
           <input type="number" id="direct_move_hours_threshold" class="form-control" value="24">
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top: 12px;">
+        <div class="form-group">
+          <label class="form-label">Haul Type</label>
+          <select id="haul_type" class="form-control">
+            <option value="long" selected>Long Haul (Direct moves require written auth)</option>
+            <option value="short">Short Haul (Pre-pull normal/expected)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lane Miles (Optional)</label>
+          <input type="number" id="lane_miles" class="form-control" placeholder="e.g. 120 (calculates haul type)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Short Haul Threshold (Miles)</label>
+          <input type="number" id="short_haul_miles_threshold" class="form-control" value="150" placeholder="Default 150">
         </div>
       </div>
     </div>
@@ -1431,10 +1449,13 @@
       document.getElementById('detention_free_hours').value = 2;
       document.getElementById('chassis_day_policy').value = "calendar_day";
       document.getElementById('chassis_free_days').value = 0;
-      document.getElementById('chassis_min_days').value = 0;
+      document.getElementById('chassis_min_days').value = 2;
       document.getElementById('storage_free_days').value = 0;
       document.getElementById('prepull_includes_first_storage_day').value = "unknown";
       document.getElementById('direct_move_hours_threshold').value = 24;
+      document.getElementById('haul_type').value = "long";
+      document.getElementById('lane_miles').value = "";
+      document.getElementById('short_haul_miles_threshold').value = 150;
 
       // Timeline Default
       setTimestamp('terminal_pickup', '2026-06-23T21:00', false);
@@ -1600,10 +1621,13 @@
         detention_free_hours: parseFloat(document.getElementById('detention_free_hours').value) || 0,
         chassis_day_policy: document.getElementById('chassis_day_policy').value === "unknown" ? null : document.getElementById('chassis_day_policy').value,
         chassis_free_days: parseInt(document.getElementById('chassis_free_days').value) || 0,
-        chassis_min_days: parseInt(document.getElementById('chassis_min_days').value) || 0,
+        chassis_min_days: document.getElementById('chassis_min_days').value !== "" ? parseInt(document.getElementById('chassis_min_days').value) : 2,
         storage_free_days: parseInt(document.getElementById('storage_free_days').value) || 0,
         prepull_includes_first_storage_day: document.getElementById('prepull_includes_first_storage_day').value === "unknown" ? null : (document.getElementById('prepull_includes_first_storage_day').value === "yes"),
-        direct_move_hours_threshold: parseFloat(document.getElementById('direct_move_hours_threshold').value) || 24
+        direct_move_hours_threshold: parseFloat(document.getElementById('direct_move_hours_threshold').value) || 24,
+        haul_type: document.getElementById('haul_type').value || "long",
+        lane_miles: document.getElementById('lane_miles').value !== "" ? parseFloat(document.getElementById('lane_miles').value) : null,
+        short_haul_miles_threshold: parseFloat(document.getElementById('short_haul_miles_threshold').value) || 150
       };
 
       const timeline = {
@@ -1694,22 +1718,29 @@
           }
         } else if (l.type === "chassis") {
           const policy = terms.chassis_day_policy || "calendar_day";
-          if (policy === "calendar_day") {
-            if (l.qty > 2) {
-              appr = 90;
-              disp = lineTotal - 90;
-              status = "DISPUTE";
-              reason = `Actual duration pickup (${timeline.terminal_pickup || 'N/A'}) to return (${timeline.empty_return || 'N/A'}) = 2 calendar day(s). 2 day(s) ($90) APPROVE, ${l.qty - 2} day(s) ($${disp}) DISPUTE.`;
-            } else {
-              appr = lineTotal;
-              status = "APPROVE";
-              reason = "Chassis days verified against container timeline.";
-            }
+          const minDays = (terms.chassis_min_days !== undefined && terms.chassis_min_days !== null) ? terms.chassis_min_days : 2;
+          const chassisRate = terms.chassis_per_day || 45;
+          let rawDays = (policy === "calendar_day") ? 2 : 1;
+          let calcNote = (policy === "calendar_day") ? "2 calendar day(s)" : "1 24h-block(s)";
+          const supportedDays = Math.max(rawDays, minDays);
+          if (minDays > rawDays) {
+            calcNote += `; ${minDays}-day drayage minimum applied (calculated ${rawDays} day(s))`;
+          } else if (minDays > 0) {
+            calcNote += `; meets ${minDays}-day drayage minimum`;
+          }
+
+          if (l.qty <= supportedDays) {
+            appr = lineTotal;
+            disp = 0;
+            status = "APPROVE";
+            reason = `${l.qty} day(s) ($${fmt(appr)}) APPROVE. Supported by timeline (${calcNote}).`;
           } else {
-            appr = 45;
-            disp = lineTotal - 45;
+            const apprDays = supportedDays;
+            const dispDays = l.qty - supportedDays;
+            appr = apprDays * chassisRate;
+            disp = dispDays * chassisRate;
             status = "DISPUTE";
-            reason = `Actual duration elapsed hours = 1 24h-block(s). 1 day(s) ($45) APPROVE, ${l.qty - 1} day(s) ($${disp}) DISPUTE.`;
+            reason = `${apprDays} day(s) ($${fmt(appr)}) APPROVE, ${dispDays} day(s) ($${fmt(disp)}) DISPUTE. Timeline supports ${supportedDays} day(s) under ${policy} policy (${calcNote}).`;
           }
         } else if (l.type === "storage") {
           disp = 45;
@@ -1719,11 +1750,37 @@
           missing.push("Yard-in and yard-out timestamps (proof of yard hold)");
           missing.push("Reason for yard hold / storage documentation");
         } else if (l.type === "prepull") {
-          proof = lineTotal;
-          status = "REQUIRE_PROOF";
-          reason = "Pre-pull billed ($150) without yard timestamps or documented authorization. Direct move under 24h threshold. REQUIRE_PROOF.";
-          missing.push("Yard-in and yard-out timestamps (proof of yard drop)");
-          missing.push("Proof early pull was requested by broker/customer");
+          let haulType = terms.haul_type || "long";
+          const threshold = (terms.short_haul_miles_threshold !== undefined && terms.short_haul_miles_threshold !== null) ? terms.short_haul_miles_threshold : 150;
+          if (terms.lane_miles !== undefined && terms.lane_miles !== null && terms.lane_miles !== "") {
+            haulType = parseFloat(terms.lane_miles) <= threshold ? "short" : "long";
+          }
+          const hasYardDrop = !!(timeline.yard_in && timeline.yard_out);
+          const hasRequest = timeline.prepull_request_documented === true;
+
+          if (hasYardDrop || hasRequest) {
+            appr = lineTotal;
+            disp = 0;
+            proof = 0;
+            status = "APPROVE";
+            reason = "Approved. Pre-pull justified by yard drop evidence and/or documented pre-pull request.";
+          } else if (haulType === "short") {
+            appr = lineTotal;
+            disp = 0;
+            proof = 0;
+            status = "APPROVE";
+            reason = "Approved. On a short haul, pre-pull is expected and normal. Note: Written authorization requested for broker records.";
+            missing.push("Written pre-pull authorization from broker (requested for records)");
+          } else {
+            // Long haul direct move
+            disp = lineTotal;
+            appr = 0;
+            proof = 0;
+            status = "DISPUTE";
+            reason = "DISPUTE: unusual on a long haul, carrier may submit proof. Direct move (under 24h threshold) with night pickup and next-day delivery; no written pre-pull authorization or yard drop documented.";
+            missing.push("Yard-in and yard-out timestamps (proof of yard drop)");
+            missing.push("Proof early pull was requested by broker/customer");
+          }
         } else if (l.type === "detention") {
           if (timeline.warehouse_in && timeline.warehouse_out) {
             appr = 262.50;
@@ -2328,10 +2385,13 @@ Premier Freight Brokerage`;
         detention_free_hours: parseFloat(document.getElementById('detention_free_hours').value) || 0,
         chassis_day_policy: document.getElementById('chassis_day_policy').value === "unknown" ? null : document.getElementById('chassis_day_policy').value,
         chassis_free_days: parseInt(document.getElementById('chassis_free_days').value) || 0,
-        chassis_min_days: parseInt(document.getElementById('chassis_min_days').value) || 0,
+        chassis_min_days: document.getElementById('chassis_min_days').value !== "" ? parseInt(document.getElementById('chassis_min_days').value) : 2,
         storage_free_days: parseInt(document.getElementById('storage_free_days').value) || 0,
         prepull_includes_first_storage_day: document.getElementById('prepull_includes_first_storage_day').value === "unknown" ? null : (document.getElementById('prepull_includes_first_storage_day').value === "yes"),
-        direct_move_hours_threshold: parseFloat(document.getElementById('direct_move_hours_threshold').value) || 24
+        direct_move_hours_threshold: parseFloat(document.getElementById('direct_move_hours_threshold').value) || 24,
+        haul_type: document.getElementById('haul_type').value || "long",
+        lane_miles: document.getElementById('lane_miles').value !== "" ? parseFloat(document.getElementById('lane_miles').value) : null,
+        short_haul_miles_threshold: parseFloat(document.getElementById('short_haul_miles_threshold').value) || 150
       };
 
       const timeline = {

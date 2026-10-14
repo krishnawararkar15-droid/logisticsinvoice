@@ -94,6 +94,43 @@ RATE_KEY_MAP = {
     "detention": "detention_per_hour",
 }
 
+DEFAULT_SHORT_HAUL_THRESHOLD_MILES = 150.0
+
+
+def resolve_haul_type(terms: Dict[str, Any], timeline: Optional[Dict[str, Any]] = None) -> str:
+    """
+    Resolve haul_type ('short' or 'long').
+    If lane_miles is given, haul_type is calculated from the configurable threshold:
+      lane_miles <= threshold -> 'short'
+      lane_miles > threshold -> 'long'
+    Otherwise, uses haul_type if provided (defaulting to 'long' if unspecified).
+    """
+    timeline = timeline or {}
+    lane_miles = terms.get("lane_miles")
+    if lane_miles is None or lane_miles == "":
+        lane_miles = timeline.get("lane_miles")
+
+    threshold = terms.get("short_haul_miles_threshold")
+    if threshold is None or threshold == "":
+        threshold = terms.get("lane_miles_threshold", DEFAULT_SHORT_HAUL_THRESHOLD_MILES)
+    try:
+        threshold_val = float(threshold)
+    except (ValueError, TypeError):
+        threshold_val = DEFAULT_SHORT_HAUL_THRESHOLD_MILES
+
+    if lane_miles is not None and lane_miles != "":
+        try:
+            miles = float(lane_miles)
+            return "short" if miles <= threshold_val else "long"
+        except (ValueError, TypeError):
+            pass
+
+    haul = terms.get("haul_type") or timeline.get("haul_type")
+    if haul and str(haul).strip().lower() in ("short", "long"):
+        return str(haul).strip().lower()
+
+    return "long"
+
 
 def _audit_single_line(
     line: Dict[str, Any],
@@ -263,11 +300,16 @@ def _audit_single_line(
             calc_note = f"Calendar dates {t_pickup.date()} to {e_return.date()} -> {raw_days} calendar day(s)"
 
         free_days = int(terms.get("chassis_free_days", 0) or 0)
-        min_days = int(terms.get("chassis_min_days", 0) or 0)
+        min_days_val = terms.get("chassis_min_days")
+        min_days = 2 if min_days_val is None else int(min_days_val)
 
-        supported_days = max(0, raw_days - free_days)
-        if min_days > 0:
-            supported_days = max(supported_days, min_days)
+        calc_days = max(0, raw_days - free_days)
+        supported_days = max(calc_days, min_days)
+
+        if min_days > calc_days:
+            calc_note += f"; {min_days}-day drayage minimum applied (calculated {calc_days} day(s))"
+        elif min_days > 0:
+            calc_note += f"; meets {min_days}-day drayage minimum"
 
         if qty <= supported_days:
             approved_qty = qty
@@ -449,6 +491,8 @@ def _audit_single_line(
         t_pickup = parse_iso_timestamp(timeline.get("terminal_pickup"))
         d_actual = parse_iso_timestamp(timeline.get("delivery_actual"))
 
+        haul_type = resolve_haul_type(terms, timeline)
+
         if has_yard_drop or has_request:
             approved_amount = round(amount, 2)
             status = STATUS_APPROVE
@@ -475,29 +519,77 @@ def _audit_single_line(
                 needs_proof_qty=0.0,
             )
 
-        # Without evidence -> REQUIRE_PROOF (never auto-DISPUTE)
+        # Without yard drop or documented request:
+        if haul_type == "short":
+            # Short haul: pre-pull is expected and normal. APPROVE, with a note asking for written authorization if not documented.
+            missing_items.append("Written pre-pull authorization from broker (requested for records)")
+            reason = "Approved. On a short haul, pre-pull is expected and normal. Note: Written authorization requested for broker records."
+            return LineAuditResult(
+                type=charge_type,
+                qty=qty,
+                unit_rate=unit_rate,
+                amount=amount,
+                agreed_rate=expected_rate,
+                approved_amount=round(amount, 2),
+                disputed_amount=0.0,
+                needs_proof_amount=0.0,
+                status=STATUS_APPROVE,
+                flags=flags,
+                reason=reason,
+                timestamps_used={},
+                missing_items=missing_items,
+                approved_qty=qty,
+                disputed_qty=0.0,
+                needs_proof_qty=0.0,
+            )
+
+        # Long haul: carriers usually do NOT charge a pre-pull when pickup is at night and delivery is next day.
+        # If move is a direct move (pickup to delivery under direct_move_hours_threshold) and no written request is documented:
+        # DISPUTE with reason "unusual on a long haul, carrier may submit proof"
+        thresh = float(terms.get("direct_move_hours_threshold", 24) or 24)
+        hrs = hours_between(t_pickup, d_actual) if (t_pickup and d_actual) else None
+        is_direct_move = (hrs is not None and hrs < thresh)
+
+        if is_direct_move:
+            status = STATUS_DISPUTE
+            disputed_amount = round(amount, 2)
+            reason = (
+                f"DISPUTE: unusual on a long haul, carrier may submit proof. "
+                f"Direct move ({hrs:.1f}h pickup-to-delivery < {thresh:.0f}h threshold) with night pickup and next-day delivery; "
+                f"no written pre-pull authorization or yard drop documented."
+            )
+            missing_items.extend([
+                "Yard-in and yard-out timestamps (proof of yard drop)",
+                "Proof early pull was requested by broker/customer",
+            ])
+            return LineAuditResult(
+                type=charge_type,
+                qty=qty,
+                unit_rate=unit_rate,
+                amount=amount,
+                agreed_rate=expected_rate,
+                approved_amount=0.0,
+                disputed_amount=disputed_amount,
+                needs_proof_amount=0.0,
+                status=status,
+                flags=flags,
+                reason=reason,
+                timestamps_used={
+                    "terminal_pickup": t_pickup.isoformat() if t_pickup else None,
+                    "delivery_actual": d_actual.isoformat() if d_actual else None,
+                },
+                missing_items=missing_items,
+                approved_qty=0.0,
+                disputed_qty=qty,
+                needs_proof_qty=0.0,
+            )
+
+        # Long haul but not direct move or missing timestamps: REQUIRE_PROOF
         missing_items.extend([
             "Yard-in and yard-out timestamps (proof of yard drop)",
             "Proof early pull was requested by broker/customer",
             "Terminal last free day (LFD) record",
         ])
-
-        reason_parts = [
-            "REQUIRE_PROOF: Pre-pull requires proof of a yard drop or documented broker/customer authorization."
-        ]
-
-        if t_pickup and d_actual:
-            hrs = hours_between(t_pickup, d_actual)
-            thresh = float(terms.get("direct_move_hours_threshold", 24) or 24)
-            timestamps_used = {
-                "terminal_pickup": t_pickup.isoformat(),
-                "delivery_actual": d_actual.isoformat(),
-            }
-            if hrs < thresh:
-                reason_parts.append(
-                    f"Timeline looks like one direct move ({hrs:.1f}h pickup-to-delivery < {thresh:.0f}h threshold), which may not involve a yard hold."
-                )
-
         return LineAuditResult(
             type=charge_type,
             qty=qty,
@@ -506,11 +598,14 @@ def _audit_single_line(
             agreed_rate=expected_rate,
             approved_amount=0.0,
             disputed_amount=0.0,
-            needs_proof_amount=amount,
+            needs_proof_amount=round(amount, 2),
             status=STATUS_REQUIRE_PROOF,
             flags=flags,
-            reason=" ".join(reason_parts),
-            timestamps_used=timestamps_used,
+            reason="REQUIRE_PROOF: Pre-pull requires proof of a yard drop or documented broker/customer authorization.",
+            timestamps_used={
+                "terminal_pickup": t_pickup.isoformat() if t_pickup else None,
+                "delivery_actual": d_actual.isoformat() if d_actual else None,
+            },
             missing_items=missing_items,
             approved_qty=0.0,
             disputed_qty=0.0,

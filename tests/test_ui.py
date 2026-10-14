@@ -32,8 +32,8 @@ def test_sample_case_audit_integration():
     result = audit_invoice(invoice, terms, timeline)
     assert result.summary.total_billed == 1875.0
     assert result.summary.approved_amount == 1590.0
-    assert result.summary.disputed_amount == 90.0
-    assert result.summary.needs_proof_amount == 195.0
+    assert result.summary.disputed_amount == 240.0
+    assert result.summary.needs_proof_amount == 45.0
     assert result.summary.not_approved_amount == 285.0
     assert result.summary.is_provisional is True
 
@@ -58,8 +58,8 @@ def test_dual_policy_comparison_integration():
     assert "summary" in result.alternative_policy_result
     alt_summary = result.alternative_policy_result["summary"]
     assert alt_summary["total_billed"] == 1875.0
-    assert alt_summary["approved_amount"] == 1545.0
-    assert alt_summary["disputed_amount"] == 135.0
+    assert alt_summary["approved_amount"] == 1590.0
+    assert alt_summary["disputed_amount"] == 240.0
 
 
 def test_index_html_contains_three_new_features():

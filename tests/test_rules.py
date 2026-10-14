@@ -38,10 +38,13 @@ def base_terms():
         "detention_free_hours": 2,
         "chassis_day_policy": "calendar_day",
         "chassis_free_days": 0,
-        "chassis_min_days": 0,
+        "chassis_min_days": 2,
         "storage_free_days": 0,
         "prepull_includes_first_storage_day": None,
         "direct_move_hours_threshold": 24,
+        "haul_type": "long",
+        "lane_miles": None,
+        "short_haul_miles_threshold": 150,
     }
 
 
@@ -79,12 +82,12 @@ def base_invoice():
 # ==============================================================================
 
 def test_test_case_1_calendar_day_policy(base_terms, base_timeline, base_invoice):
-    """Verify Test Case 1 under 'calendar_day' policy:
+    """Verify Test Case 1 under 'calendar_day' policy with haul_type = long, chassis_min_days = 2:
     - linehaul_fsc: $1,500 APPROVE (pending signed POD)
     - chassis (3 days @ $45 = $135): 2 days ($90) APPROVE, 1 day ($45) DISPUTE
     - storage (2 days @ $45 = $90): 1 day ($45) DISPUTE, 1 day ($45) REQUIRE_PROOF
-    - prepull ($150): REQUIRE_PROOF
-    - Summary: Approved $1,590 (provisional), Disputed $90, Needs Proof $195, Total Not Approved $285.
+    - prepull ($150): DISPUTE ("unusual on a long haul, carrier may submit proof")
+    - Summary: Approved $1,590 (provisional), Disputed $240, Needs Proof $45, Total Not Approved $285.
     """
     result = audit_invoice(base_invoice, base_terms, base_timeline, override_policy="calendar_day")
     lines_by_type = {line.type: line for line in result.lines}
@@ -125,20 +128,20 @@ def test_test_case_1_calendar_day_policy(base_terms, base_timeline, base_invoice
 
     # 4. prepull
     prepull = lines_by_type["prepull"]
-    assert prepull.status == STATUS_REQUIRE_PROOF
+    assert prepull.status == STATUS_DISPUTE
     assert prepull.amount == 150.0
     assert prepull.approved_amount == 0.0
-    assert prepull.disputed_amount == 0.0
-    assert prepull.needs_proof_amount == 150.0
-    assert "REQUIRE_PROOF" in prepull.reason
+    assert prepull.disputed_amount == 150.0
+    assert prepull.needs_proof_amount == 0.0
+    assert "unusual on a long haul, carrier may submit proof" in prepull.reason
 
     # Executive Financial Summary
     summary = result.summary
     assert summary.total_billed == 1875.0
     assert summary.approved_amount == 1590.0
     assert summary.is_provisional is True
-    assert summary.disputed_amount == 90.0
-    assert summary.needs_proof_amount == 195.0
+    assert summary.disputed_amount == 240.0
+    assert summary.needs_proof_amount == 45.0
     assert summary.not_approved_amount == 285.0
     assert summary.not_approved_amount == summary.disputed_amount + summary.needs_proof_amount
 
@@ -148,9 +151,10 @@ def test_test_case_1_calendar_day_policy(base_terms, base_timeline, base_invoice
 # ==============================================================================
 
 def test_test_case_1_24h_block_policy(base_terms, base_timeline, base_invoice):
-    """Verify Test Case 1 under '24h_block' policy:
-    - chassis: 1 day ($45) APPROVE, 2 days ($90) DISPUTE
-    - Summary: Approved $1,545 (provisional), Disputed $135, Needs Proof $195, Total Not Approved $330.
+    """Verify Test Case 1 under '24h_block' policy with chassis_min_days = 2:
+    - chassis: 2 days ($90) APPROVE, 1 day ($45) DISPUTE (same for both policies via 2-day drayage minimum)
+    - prepull: DISPUTE ($150)
+    - Summary: Approved $1,590 (provisional), Disputed $240, Needs Proof $45, Total Not Approved $285.
     """
     result = audit_invoice(base_invoice, base_terms, base_timeline, override_policy="24h_block")
     lines_by_type = {line.type: line for line in result.lines}
@@ -160,21 +164,27 @@ def test_test_case_1_24h_block_policy(base_terms, base_timeline, base_invoice):
     assert chassis.status == STATUS_DISPUTE
     assert chassis.amount == 135.0
     assert chassis.qty == 3.0
-    assert chassis.approved_qty == 1.0
-    assert chassis.approved_amount == 45.0
-    assert chassis.disputed_qty == 2.0
-    assert chassis.disputed_amount == 90.0
+    assert chassis.approved_qty == 2.0
+    assert chassis.approved_amount == 90.0
+    assert chassis.disputed_qty == 1.0
+    assert chassis.disputed_amount == 45.0
     assert chassis.needs_proof_amount == 0.0
-    assert "1 day(s) ($45) APPROVE, 2 day(s) ($90) DISPUTE" in chassis.reason
+    assert "2 day(s) ($90) APPROVE, 1 day(s) ($45) DISPUTE" in chassis.reason
+
+    # prepull
+    prepull = lines_by_type["prepull"]
+    assert prepull.status == STATUS_DISPUTE
+    assert prepull.amount == 150.0
+    assert prepull.disputed_amount == 150.0
 
     # Executive Financial Summary
     summary = result.summary
     assert summary.total_billed == 1875.0
-    assert summary.approved_amount == 1545.0
+    assert summary.approved_amount == 1590.0
     assert summary.is_provisional is True
-    assert summary.disputed_amount == 135.0
-    assert summary.needs_proof_amount == 195.0
-    assert summary.not_approved_amount == 330.0
+    assert summary.disputed_amount == 240.0
+    assert summary.needs_proof_amount == 45.0
+    assert summary.not_approved_amount == 285.0
     assert summary.not_approved_amount == summary.disputed_amount + summary.needs_proof_amount
 
 
@@ -192,8 +202,8 @@ def test_dual_policy_scenario_when_policy_null(base_terms, base_timeline, base_i
     # Primary policy (calendar_day baseline)
     assert "null" in result.policy_used
     assert result.summary.approved_amount == 1590.0
-    assert result.summary.disputed_amount == 90.0
-    assert result.summary.needs_proof_amount == 195.0
+    assert result.summary.disputed_amount == 240.0
+    assert result.summary.needs_proof_amount == 45.0
     assert result.summary.not_approved_amount == 285.0
     assert result.summary.is_provisional is True
 
@@ -201,10 +211,10 @@ def test_dual_policy_scenario_when_policy_null(base_terms, base_timeline, base_i
     assert result.alternative_policy_result is not None
     alt = result.alternative_policy_result
     alt_summary = alt["summary"]
-    assert alt_summary["approved_amount"] == 1545.0
-    assert alt_summary["disputed_amount"] == 135.0
-    assert alt_summary["needs_proof_amount"] == 195.0
-    assert alt_summary["not_approved_amount"] == 330.0
+    assert alt_summary["approved_amount"] == 1590.0
+    assert alt_summary["disputed_amount"] == 240.0
+    assert alt_summary["needs_proof_amount"] == 45.0
+    assert alt_summary["not_approved_amount"] == 285.0
 
     # Notes explain both policies evaluated
     assert any("Both 'calendar_day' and '24h_block' policies were calculated" in n for n in result.notes)
@@ -579,3 +589,114 @@ def test_prepull_includes_first_storage_day_true():
 
     # documents_needed does NOT have the null clarification note
     assert not any("prepull_includes_first_storage_day is null" in doc for doc in result.documents_needed)
+
+
+# ==============================================================================
+# 9. SHORT-HAUL & LANE MILES TESTS (BROKER RULES 1, 2, 3)
+# ==============================================================================
+
+def test_short_haul_prepull_and_two_day_chassis_minimum_all_approved():
+    """Verify short-haul case:
+    - Pre-pull is expected and normal -> APPROVE (with a note asking for written authorization if not documented).
+    - 2-day chassis minimum rule applies -> APPROVE 2 days on 1-day move.
+    - Signed POD provided -> Linehaul APPROVE.
+    - Summary: 100% approved, $0 disputed, $0 needs proof, not provisional.
+    """
+    terms = {
+        "linehaul_fsc": 1200,
+        "prepull_fee": 150,
+        "chassis_per_day": 45,
+        "chassis_min_days": 2,
+        "haul_type": "short",
+        "chassis_day_policy": "calendar_day",
+        "prepull_includes_first_storage_day": False,
+    }
+    timeline = {
+        "terminal_pickup": "2026-06-25T08:00",
+        "delivery_actual": "2026-06-25T14:00",
+        "empty_return": "2026-06-25T17:00",
+        "pod_provided": True,
+        "prepull_request_documented": None,  # Not documented, but approved with note on short haul
+    }
+    invoice = {
+        "lines": [
+            {"type": "linehaul_fsc", "qty": 1, "unit_rate": 1200, "amount": 1200},
+            {"type": "prepull", "qty": 1, "unit_rate": 150, "amount": 150},
+            {"type": "chassis", "qty": 2, "unit_rate": 45, "amount": 90},
+        ],
+        "total": 1440,
+    }
+
+    result = audit_invoice(invoice, terms, timeline)
+    lines_by_type = {line.type: line for line in result.lines}
+
+    # 1. Linehaul
+    lh = lines_by_type["linehaul_fsc"]
+    assert lh.status == STATUS_APPROVE
+    assert lh.approved_amount == 1200.0
+
+    # 2. Pre-pull: expected and normal on short haul -> APPROVE
+    pp = lines_by_type["prepull"]
+    assert pp.status == STATUS_APPROVE
+    assert pp.approved_amount == 150.0
+    assert pp.disputed_amount == 0.0
+    assert pp.needs_proof_amount == 0.0
+    assert "On a short haul, pre-pull is expected and normal" in pp.reason
+
+    # 3. Chassis: 1 calendar day move meets 2-day drayage minimum -> APPROVE
+    ch = lines_by_type["chassis"]
+    assert ch.status == STATUS_APPROVE
+    assert ch.approved_qty == 2.0
+    assert ch.approved_amount == 90.0
+    assert ch.disputed_amount == 0.0
+    assert "2-day drayage minimum applied" in ch.reason
+
+    # Executive Summary: 100% clean approval
+    summary = result.summary
+    assert summary.total_billed == 1440.0
+    assert summary.approved_amount == 1440.0
+    assert summary.disputed_amount == 0.0
+    assert summary.needs_proof_amount == 0.0
+    assert summary.not_approved_amount == 0.0
+    assert summary.is_provisional is False
+
+
+def test_lane_miles_calculated_threshold_short_vs_long():
+    """Verify lane_miles calculates haul_type dynamically based on configurable threshold:
+    - lane_miles <= threshold -> short haul (pre-pull approved)
+    - lane_miles > threshold -> long haul (direct move pre-pull disputed)
+    """
+    timeline = {
+        "terminal_pickup": "2026-06-25T21:00",
+        "delivery_actual": "2026-06-26T08:00",  # 11h direct move
+        "empty_return": "2026-06-26T17:00",
+        "pod_provided": True,
+        "prepull_request_documented": None,
+    }
+    invoice = {
+        "lines": [
+            {"type": "prepull", "qty": 1, "unit_rate": 150, "amount": 150},
+        ],
+        "total": 150,
+    }
+
+    # Case 1: lane_miles = 75 with default threshold 150 -> short haul -> APPROVE
+    terms_short = {
+        "prepull_fee": 150,
+        "lane_miles": 75,
+        "short_haul_miles_threshold": 150,
+    }
+    res_short = audit_invoice(invoice, terms_short, timeline)
+    assert res_short.lines[0].status == STATUS_APPROVE
+    assert res_short.lines[0].approved_amount == 150.0
+
+    # Case 2: lane_miles = 220 with default threshold 150 -> long haul -> DISPUTE
+    terms_long = {
+        "prepull_fee": 150,
+        "lane_miles": 220,
+        "short_haul_miles_threshold": 150,
+    }
+    res_long = audit_invoice(invoice, terms_long, timeline)
+    assert res_long.lines[0].status == STATUS_DISPUTE
+    assert res_long.lines[0].disputed_amount == 150.0
+    assert "unusual on a long haul, carrier may submit proof" in res_long.lines[0].reason

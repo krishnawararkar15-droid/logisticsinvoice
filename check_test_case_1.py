@@ -39,8 +39,8 @@ def run_checks():
     # Assertions for calendar_day
     assert s_cal.total_billed == 1875.0, f"Expected 1875, got {s_cal.total_billed}"
     assert s_cal.approved_amount == 1590.0, f"Expected 1590, got {s_cal.approved_amount}"
-    assert s_cal.disputed_amount == 90.0, f"Expected 90, got {s_cal.disputed_amount}"
-    assert s_cal.needs_proof_amount == 195.0, f"Expected 195, got {s_cal.needs_proof_amount}"
+    assert s_cal.disputed_amount == 240.0, f"Expected 240, got {s_cal.disputed_amount}"
+    assert s_cal.needs_proof_amount == 45.0, f"Expected 45, got {s_cal.needs_proof_amount}"
     assert s_cal.not_approved_amount == 285.0, f"Expected 285, got {s_cal.not_approved_amount}"
     assert s_cal.is_provisional is True, "Expected provisional approval"
 
@@ -61,12 +61,12 @@ def run_checks():
     print(f"Not Approved:  ${s_24h.not_approved_amount:,.2f}")
     print("=" * 60)
 
-    # Assertions for 24h_block
+    # Assertions for 24h_block (identical to calendar_day with chassis_min_days=2)
     assert s_24h.total_billed == 1875.0, f"Expected 1875, got {s_24h.total_billed}"
-    assert s_24h.approved_amount == 1545.0, f"Expected 1545, got {s_24h.approved_amount}"
-    assert s_24h.disputed_amount == 135.0, f"Expected 135, got {s_24h.disputed_amount}"
-    assert s_24h.needs_proof_amount == 195.0, f"Expected 195, got {s_24h.needs_proof_amount}"
-    assert s_24h.not_approved_amount == 330.0, f"Expected 330, got {s_24h.not_approved_amount}"
+    assert s_24h.approved_amount == 1590.0, f"Expected 1590, got {s_24h.approved_amount}"
+    assert s_24h.disputed_amount == 240.0, f"Expected 240, got {s_24h.disputed_amount}"
+    assert s_24h.needs_proof_amount == 45.0, f"Expected 45, got {s_24h.needs_proof_amount}"
+    assert s_24h.not_approved_amount == 285.0, f"Expected 285, got {s_24h.not_approved_amount}"
     assert s_24h.is_provisional is True, "Expected provisional approval"
 
     # Test report generation

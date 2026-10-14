@@ -34,10 +34,11 @@ def sample_test_case_1_result():
         "detention_free_hours": 2,
         "chassis_day_policy": "calendar_day",
         "chassis_free_days": 0,
-        "chassis_min_days": 0,
+        "chassis_min_days": 2,
         "storage_free_days": 0,
         "prepull_includes_first_storage_day": None,
         "direct_move_hours_threshold": 24,
+        "haul_type": "long",
     }
     timeline = {
         "terminal_pickup": "2026-06-23T21:00",
@@ -176,8 +177,8 @@ def test_json_structure(tmp_path, sample_test_case_1_result):
     assert "summary" in data
     assert data["summary"]["total_billed"] == 1875.0
     assert data["summary"]["approved_amount"] == 1590.0
-    assert data["summary"]["disputed_amount"] == 90.0
-    assert data["summary"]["needs_proof_amount"] == 195.0
+    assert data["summary"]["disputed_amount"] == 240.0
+    assert data["summary"]["needs_proof_amount"] == 45.0
     assert data["summary"]["not_approved_amount"] == 285.0
     assert data["summary"]["is_provisional"] is True
     assert len(data["lines"]) == 4
@@ -217,5 +218,5 @@ def test_csv_structure(tmp_path, sample_test_case_1_result):
     assert totals_row[0] == "TOTALS"
     assert float(totals_row[3]) == 1875.0  # total_billed
     assert float(totals_row[5]) == 1590.0  # approved_amount
-    assert float(totals_row[6]) == 90.0    # disputed_amount
-    assert float(totals_row[7]) == 195.0   # needs_proof_amount
+    assert float(totals_row[6]) == 240.0   # disputed_amount
+    assert float(totals_row[7]) == 45.0    # needs_proof_amount
