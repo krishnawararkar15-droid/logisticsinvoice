@@ -2,7 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/dispute-packet", "destination": "/api/dispute_packet" },
-    { "source": "/api/batch-audit", "destination": "/api/batch_audit" }
+    { "source": "/api/(.*)", "destination": "/api/index" }
   ]
 }

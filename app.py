@@ -170,6 +170,12 @@ async def extract_ocr(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"OCR Extraction failed: {str(e)}")
 
 
+@app.get("/api/ratecon")
+@app.get("/ratecon")
+def ratecon_status():
+    return {"status": "ok", "endpoint": "ratecon"}
+
+
 @app.post("/api/ratecon")
 @app.post("/ratecon")
 async def extract_ratecon(file: UploadFile = File(...)):
@@ -197,8 +203,18 @@ async def extract_ratecon(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Rate Con parsing failed: {str(e)}")
 
 
+@app.get("/api/dispute-packet")
+@app.get("/dispute-packet")
+@app.get("/api/dispute_packet")
+@app.get("/dispute_packet")
+def dispute_packet_status():
+    return {"status": "ok", "endpoint": "dispute-packet"}
+
+
 @app.post("/api/dispute-packet")
 @app.post("/dispute-packet")
+@app.post("/api/dispute_packet")
+@app.post("/dispute_packet")
 def generate_dispute_packet_endpoint(payload: DisputePacketPayload):
     try:
         try:
@@ -233,8 +249,18 @@ def generate_dispute_packet_endpoint(payload: DisputePacketPayload):
         )
 
 
+@app.get("/api/batch-audit")
+@app.get("/batch-audit")
+@app.get("/api/batch_audit")
+@app.get("/batch_audit")
+def batch_audit_status():
+    return {"status": "ok", "endpoint": "batch-audit"}
+
+
 @app.post("/api/batch-audit")
 @app.post("/batch-audit")
+@app.post("/api/batch_audit")
+@app.post("/batch_audit")
 def run_batch_audit(payload: BatchAuditPayload):
     try:
         terms = payload.terms or {}
