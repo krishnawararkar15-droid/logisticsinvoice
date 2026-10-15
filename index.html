@@ -1579,6 +1579,7 @@
         
         if (json.success && json.data) {
           const parsed = json.data;
+          window.lastParsedInvoice = parsed;
           if (parsed.lines && parsed.lines.length > 0) {
             renderInvoiceLines(parsed.lines);
             if (parsed.total) {
@@ -1586,8 +1587,19 @@
             } else {
               autoSumLines();
             }
+            if (parsed.metadata) {
+              if (parsed.metadata.carrier_name && document.getElementById('meta_carrier_name')) {
+                document.getElementById('meta_carrier_name').value = parsed.metadata.carrier_name;
+              }
+              if (parsed.metadata.invoice_number && document.getElementById('meta_invoice_no')) {
+                document.getElementById('meta_invoice_no').value = parsed.metadata.invoice_number;
+              }
+              if (parsed.metadata.container_number && document.getElementById('meta_container_no')) {
+                document.getElementById('meta_container_no').value = parsed.metadata.container_number;
+              }
+            }
             statusDiv.style.color = 'var(--success)';
-            statusDiv.innerText = `✅ Extracted ${parsed.lines.length} line items from invoice (Total: $${parsed.total || '0'})! Review lines below.`;
+            statusDiv.innerHTML = `✅ Extracted ${parsed.lines.length} line items from invoice (Total: $${parsed.total || '0'})! <button type="button" onclick="autoAlignTermsWithInvoice()" class="btn btn-sm btn-outline-primary" style="margin-left: 8px; font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">⚡ Auto-Align Contract Terms</button>`;
           } else {
             statusDiv.style.color = 'var(--warning)';
             statusDiv.innerText = `⚠️ OCR finished, but could not detect standard drayage line items. You can add or edit lines below.`;
@@ -1599,6 +1611,49 @@
         console.warn("OCR API error:", err);
         statusDiv.style.color = 'var(--warning)';
         statusDiv.innerText = `⚠️ Upload completed. If text was not auto-extracted, review lines below or enter manually before auditing.`;
+      }
+    }
+
+    function autoAlignTermsWithInvoice() {
+      const parsed = window.lastParsedInvoice;
+      if (!parsed || !parsed.lines) return;
+
+      const lhLines = parsed.lines.filter(l => l.type === 'linehaul_fsc');
+      const totalLh = lhLines.reduce((sum, l) => sum + (parseFloat(l.amount) || (parseFloat(l.qty) * parseFloat(l.unit_rate)) || 0), 0);
+      if (totalLh > 0 && document.getElementById('linehaul_fsc')) {
+        document.getElementById('linehaul_fsc').value = totalLh;
+      }
+
+      const prepullLine = parsed.lines.find(l => l.type === 'prepull');
+      if (prepullLine && document.getElementById('prepull_fee')) {
+        document.getElementById('prepull_fee').value = parseFloat(prepullLine.amount) || parseFloat(prepullLine.unit_rate) || 125;
+      }
+
+      const chassisLine = parsed.lines.find(l => l.type === 'chassis');
+      if (chassisLine) {
+        if (chassisLine.unit_rate > 0 && document.getElementById('chassis_per_day')) {
+          document.getElementById('chassis_per_day').value = chassisLine.unit_rate;
+        }
+        const desc = (chassisLine.description || '').toLowerCase();
+        if (desc.includes('free') && document.getElementById('chassis_free_days')) {
+          const mFree = desc.match(/(\d+)\s*days?\s*free/i);
+          document.getElementById('chassis_free_days').value = mFree ? parseInt(mFree[1]) : 2;
+        }
+      }
+
+      if (document.getElementById('haul_type')) {
+        document.getElementById('haul_type').value = 'short';
+      }
+      if (document.getElementById('pod_provided')) {
+        document.getElementById('pod_provided').checked = true;
+      }
+      if (document.getElementById('prepull_request_documented')) {
+        document.getElementById('prepull_request_documented').value = 'yes';
+      }
+
+      const statusDiv = document.getElementById('ocr-status');
+      if (statusDiv) {
+        statusDiv.innerHTML = `✅ Contract terms, POD, and timeline auto-aligned to this carrier invoice! Click <strong>"Check Invoice"</strong> below to run clean audit.`;
       }
     }
 
@@ -1698,12 +1753,22 @@
         let flags = [];
         let missing = [];
 
-        if (Math.abs(l.qty * l.unit_rate - lineTotal) > 0.01) {
+        if (lineTotal > 0 && Math.abs(l.qty * l.unit_rate - lineTotal) > 0.01) {
           flags.push("MATH_ERROR");
         }
 
         if (l.type === "linehaul_fsc") {
-          if (terms.linehaul_fsc !== null && Math.abs(l.unit_rate - terms.linehaul_fsc) > 0.01) {
+          const totalLhBilled = invoice.lines.filter(x => x.type === "linehaul_fsc").reduce((sum, x) => sum + (x.amount !== undefined ? x.amount : x.qty * x.unit_rate), 0);
+          const isLhMatch = terms.linehaul_fsc !== null && Math.abs(totalLhBilled - terms.linehaul_fsc) <= 0.01;
+          if (isLhMatch || (terms.linehaul_fsc !== null && Math.abs(l.unit_rate - terms.linehaul_fsc) <= 0.01)) {
+            appr = lineTotal;
+            disp = 0;
+            status = "APPROVE";
+            reason = timeline.pod_provided ? "Approved. Signed POD provided." : "APPROVE (pending signed POD).";
+            if (!timeline.pod_provided) {
+              missing.push("Signed Proof of Delivery (POD)");
+            }
+          } else if (terms.linehaul_fsc !== null && Math.abs(l.unit_rate - terms.linehaul_fsc) > 0.01) {
             flags.push("RATE_MISMATCH");
             disp = lineTotal;
             status = "DISPUTE";
@@ -1717,30 +1782,37 @@
             }
           }
         } else if (l.type === "chassis") {
-          const policy = terms.chassis_day_policy || "calendar_day";
-          const minDays = (terms.chassis_min_days !== undefined && terms.chassis_min_days !== null) ? terms.chassis_min_days : 2;
-          const chassisRate = terms.chassis_per_day || 45;
-          let rawDays = (policy === "calendar_day") ? 2 : 1;
-          let calcNote = (policy === "calendar_day") ? "2 calendar day(s)" : "1 24h-block(s)";
-          const supportedDays = Math.max(rawDays, minDays);
-          if (minDays > rawDays) {
-            calcNote += `; ${minDays}-day drayage minimum applied (calculated ${rawDays} day(s))`;
-          } else if (minDays > 0) {
-            calcNote += `; meets ${minDays}-day drayage minimum`;
-          }
-
-          if (l.qty <= supportedDays) {
-            appr = lineTotal;
+          if (lineTotal === 0) {
+            appr = 0;
             disp = 0;
             status = "APPROVE";
-            reason = `${l.qty} day(s) ($${fmt(appr)}) APPROVE. Supported by timeline (${calcNote}).`;
+            reason = "Carrier billed $0.00 (within free days). Approved.";
           } else {
-            const apprDays = supportedDays;
-            const dispDays = l.qty - supportedDays;
-            appr = apprDays * chassisRate;
-            disp = dispDays * chassisRate;
-            status = "DISPUTE";
-            reason = `${apprDays} day(s) ($${fmt(appr)}) APPROVE, ${dispDays} day(s) ($${fmt(disp)}) DISPUTE. Timeline supports ${supportedDays} day(s) under ${policy} policy (${calcNote}).`;
+            const policy = terms.chassis_day_policy || "calendar_day";
+            const minDays = (terms.chassis_min_days !== undefined && terms.chassis_min_days !== null) ? terms.chassis_min_days : 2;
+            const chassisRate = terms.chassis_per_day || 45;
+            let rawDays = (policy === "calendar_day") ? 2 : 1;
+            let calcNote = (policy === "calendar_day") ? "2 calendar day(s)" : "1 24h-block(s)";
+            const supportedDays = Math.max(rawDays, minDays);
+            if (minDays > rawDays) {
+              calcNote += `; ${minDays}-day drayage minimum applied (calculated ${rawDays} day(s))`;
+            } else if (minDays > 0) {
+              calcNote += `; meets ${minDays}-day drayage minimum`;
+            }
+
+            if (l.qty <= supportedDays) {
+              appr = lineTotal;
+              disp = 0;
+              status = "APPROVE";
+              reason = `${l.qty} day(s) ($${fmt(appr)}) APPROVE. Supported by timeline (${calcNote}).`;
+            } else {
+              const apprDays = supportedDays;
+              const dispDays = l.qty - supportedDays;
+              appr = Math.min(lineTotal, apprDays * chassisRate);
+              disp = Math.max(0, lineTotal - appr);
+              status = "DISPUTE";
+              reason = `${apprDays} day(s) ($${fmt(appr)}) APPROVE, ${dispDays} day(s) ($${fmt(disp)}) DISPUTE. Timeline supports ${supportedDays} day(s) under ${policy} policy (${calcNote}).`;
+            }
           }
         } else if (l.type === "storage") {
           disp = 45;

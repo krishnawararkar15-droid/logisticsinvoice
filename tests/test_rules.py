@@ -700,3 +700,102 @@ def test_lane_miles_calculated_threshold_short_vs_long():
     assert res_long.lines[0].status == STATUS_DISPUTE
     assert res_long.lines[0].disputed_amount == 150.0
     assert "unusual on a long haul, carrier may submit proof" in res_long.lines[0].reason
+
+
+def test_chassis_zero_billed_free_days_no_negative_dispute():
+    """Verify that when carrier bills $0.00 for chassis (e.g. 2 days free),
+    approved is $0.00, disputed is $0.00, and no negative dispute occurs."""
+    terms = {
+        "chassis_per_day": 25.0,
+        "chassis_free_days": 2,
+        "chassis_min_days": 2,
+    }
+    timeline = {
+        "terminal_pickup": "2026-08-18T08:00",
+        "empty_return": "2026-08-19T16:00",
+    }
+    invoice = {
+        "lines": [
+            {"type": "chassis", "description": "Chassis (Standard)--2 Days Free", "qty": 2, "unit_rate": 25.0, "amount": 0.0},
+        ],
+        "total": 0.0,
+    }
+    res = audit_invoice(invoice, terms, timeline)
+    assert len(res.lines) == 1
+    chassis_res = res.lines[0]
+    assert chassis_res.status == STATUS_APPROVE
+    assert chassis_res.approved_amount == 0.0
+    assert chassis_res.disputed_amount == 0.0
+    assert chassis_res.flags == []
+    assert res.summary.disputed_amount == 0.0
+    assert res.summary.approved_amount == 0.0
+
+
+def test_linehaul_and_fsc_split_lines_clean_audit():
+    """Verify that when an invoice separates Base Linehaul and FSC,
+    neither is flagged as duplicate or rate mismatch if the sum matches agreed linehaul_fsc."""
+    terms = {
+        "linehaul_fsc": 445.0,
+    }
+    timeline = {
+        "pod_provided": True,
+    }
+    invoice = {
+        "lines": [
+            {"type": "linehaul_fsc", "description": "Line Haul-FFAU6431820", "qty": 1, "unit_rate": 307.0, "amount": 307.0},
+            {"type": "linehaul_fsc", "description": "Fuel Surcharge", "qty": 1, "unit_rate": 138.0, "amount": 138.0},
+        ],
+        "total": 445.0,
+    }
+    res = audit_invoice(invoice, terms, timeline)
+    assert len(res.lines) == 2
+    assert res.lines[0].status == STATUS_APPROVE
+    assert res.lines[0].approved_amount == 307.0
+    assert res.lines[0].flags == []
+
+    assert res.lines[1].status == STATUS_APPROVE
+    assert res.lines[1].approved_amount == 138.0
+    assert res.lines[1].flags == []
+
+    assert res.summary.total_billed == 445.0
+    assert res.summary.approved_amount == 445.0
+    assert res.summary.disputed_amount == 0.0
+    assert res.summary.flags == []
+
+
+def test_inv2940_clean_end_to_end_audit():
+    """Verify that a clean legitimate invoice like INV-2940 ($570 total) audits 100% clean."""
+    terms = {
+        "linehaul_fsc": 445.0,
+        "prepull_fee": 125.0,
+        "chassis_per_day": 25.0,
+        "chassis_free_days": 2,
+        "chassis_min_days": 2,
+        "haul_type": "short",
+        "prepull_includes_first_storage_day": True,
+    }
+    timeline = {
+        "terminal_pickup": "2026-08-18T08:00",
+        "delivery_actual": "2026-08-19T10:00",
+        "empty_return": "2026-08-19T16:00",
+        "pod_provided": True,
+        "prepull_request_documented": True,
+    }
+    invoice = {
+        "lines": [
+            {"type": "linehaul_fsc", "description": "Line Haul-FFAU6431820", "qty": 1, "unit_rate": 307.0, "amount": 307.0},
+            {"type": "linehaul_fsc", "description": "Fuel Surcharge", "qty": 1, "unit_rate": 138.0, "amount": 138.0},
+            {"type": "chassis", "description": "Chassis (Standard)--2 Days Free", "qty": 2, "unit_rate": 0.0, "amount": 0.0},
+            {"type": "prepull", "description": "Pre-Pull Fee-1 Day Storage Included", "qty": 1, "unit_rate": 125.0, "amount": 125.0},
+        ],
+        "total": 570.0,
+    }
+    res = audit_invoice(invoice, terms, timeline)
+    s = res.summary
+    assert s.total_billed == 570.0
+    assert s.approved_amount == 570.0
+    assert s.disputed_amount == 0.0
+    assert s.needs_proof_amount == 0.0
+    assert s.not_approved_amount == 0.0
+    assert s.flags == []
+

@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
@@ -33,6 +34,24 @@ logger = logging.getLogger("rateguard.ocr")
 
 OCR_SPACE_API_URL = "https://api.ocr.space/parse/image"
 DEFAULT_OCR_SPACE_API_KEY = "K81108510188957"
+
+
+def normalize_extracted_text(text: str) -> str:
+    """Normalize font ligatures, dashes, quotes, and private-use Unicode characters."""
+    if not text:
+        return ""
+    glyph_map = {
+        "\ue081": "(", "\ue082": ")", "\ue088": "-", "\ue09b": "=", "\ue09d": "+",
+        "\u2013": "-", "\u2014": "-", "\u2012": "-", "\u2212": "-",
+        "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'",
+        "\u201c": '"', "\u201d": '"', "\u201e": '"',
+        "\u00a0": " ", "\u200b": "", "\ufeff": "",
+    }
+    for k, v in glyph_map.items():
+        text = text.replace(k, v)
+    text = unicodedata.normalize("NFKD", text)
+    text = re.sub(r"[\ue000-\uf8ff]", "", text)
+    return text
 
 # Standard drayage accessorial categories
 CHARGE_CATEGORIES = (
@@ -228,9 +247,9 @@ def extract_text_ocr_space(
             texts.append(pt)
 
     if not texts:
-        return parsed_results[0].get("ParsedText", "").strip()
+        return normalize_extracted_text(parsed_results[0].get("ParsedText", "").strip())
 
-    return "\n".join(texts).strip()
+    return normalize_extracted_text("\n".join(texts).strip())
 
 
 def extract_text_pdfplumber(
@@ -272,7 +291,8 @@ def extract_text_pdfplumber(
             if t:
                 extracted_pages.append(t)
 
-    return "\n".join(extracted_pages).strip()
+    raw_combined = "\n".join(extracted_pages).strip()
+    return normalize_extracted_text(raw_combined)
 
 
 def extract_text(
@@ -381,6 +401,39 @@ def _clean_description(line: str) -> str:
     return cleaned or line.strip()
 
 
+def _clean_numbers_for_amount_parsing(text: str) -> str:
+    """Strip container IDs, equipment IDs, phone numbers, zip codes, and dates from text."""
+    cleaned = text
+    # Strip container numbers: 4 letters followed by 6 or 7 digits (e.g. FFAU6431820)
+    cleaned = re.sub(r"\b[A-Za-z]{3,4}\s*[-#]?\s*\d{6,7}\b", " ", cleaned)
+    # Strip equipment / unit / chassis / trailer numbers
+    cleaned = re.sub(r"\b(?:unit|eq|equip|equipment|trailer|trlr|chas|chassis)\s*#?\s*[A-Za-z0-9-]+\b", " ", cleaned, flags=re.I)
+    # Strip reference / order / tracking / BOL / PRO / PO / MC / DOT IDs
+    cleaned = re.sub(r"\b(?:ref|reference|bol|po|order|tracking|pro|inv|invoice|mc|dot|usdot|scac)\s*#?\s*[A-Za-z0-9-]+\b", " ", cleaned, flags=re.I)
+    # Strip phone numbers
+    cleaned = re.sub(r"(?:\+?1\s*)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}\b", " ", cleaned)
+    # Strip dates
+    cleaned = re.sub(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", " ", cleaned)
+    cleaned = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", " ", cleaned)
+    # Strip times
+    cleaned = re.sub(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", " ", cleaned)
+    # Strip percentages
+    cleaned = re.sub(r"\b\d+(?:\.\d+)?%", " ", cleaned)
+    # Strip container dimensions
+    cleaned = re.sub(r"\b(?:20|40|45|53)\s*(?:ft|'|foot|feet)\b", " ", cleaned, flags=re.I)
+    # Strip tariff codes
+    cleaned = re.sub(r"\bitem\s*[0-9]+-?[a-z]?\b", " ", cleaned, flags=re.I)
+    # Strip US zip codes (e.g. CA 90670 or 5-digit zip codes)
+    cleaned = re.sub(r"\b[A-Za-z]{2}\s+\d{5}(?:-\d{4})?\b", " ", cleaned)
+    cleaned = re.sub(r"\b\d{5}(?:-\d{4})?\b", " ", cleaned)
+    # Strip street address numbers (e.g. 869 S Belmont St)
+    cleaned = re.sub(r"\b\d{1,5}\s+(?:[A-Za-z]+\s+){1,3}(?:Street|St|Avenue|Ave|Boulevard|Blvd|Road|Rd|Drive|Dr|Lane|Ln|Court|Ct)\b", " ", cleaned, flags=re.I)
+    # Strip equal days / free days
+    cleaned = re.sub(r"=?(?:\d+\s*)?(?:free\s+days?|days?\s+free)\b", " ", cleaned, flags=re.I)
+    cleaned = re.sub(r"=\s*\d+\s*days?\b", " ", cleaned, flags=re.I)
+    return cleaned
+
+
 def _parse_line_values(line: str) -> Tuple[float, float, float]:
     """
     Parse (qty, unit_rate, amount) from a charge line.
@@ -448,21 +501,28 @@ def _parse_line_values(line: str) -> Tuple[float, float, float]:
         return q, r, a
 
     # Strategy 3: Tabular or columnar numbers
-    # Clean out distracting non-amount numbers first
-    cleaned = line
-    # Strip dates (e.g. 10/12/2026, 2026-10-12)
-    cleaned = re.sub(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", " ", cleaned)
-    cleaned = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", " ", cleaned)
-    # Strip times (e.g. 14:30)
-    cleaned = re.sub(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", " ", cleaned)
-    # Strip percentages (e.g. 18.5%)
-    cleaned = re.sub(r"\b\d+(?:\.\d+)?%", " ", cleaned)
-    # Strip container lengths (e.g. 20ft, 40ft, 40', 53ft)
-    cleaned = re.sub(r"\b(?:20|40|45|53)\s*(?:ft|'|foot|feet)\b", " ", cleaned, flags=re.I)
-    # Strip tariff codes (e.g. Item 100-D)
-    cleaned = re.sub(r"\bitem\s*[0-9]+-?[a-z]?\b", " ", cleaned, flags=re.I)
-    # Strip PRO / Invoice labels with numbers (e.g. PRO# 991823, MC# 951820)
-    cleaned = re.sub(r"\b(?:pro|inv|invoice|po|bol|order|mc|dot|usdot|scac)\s*#?\s*[0-9a-z-]+\b", " ", cleaned, flags=re.I)
+    cleaned = _clean_numbers_for_amount_parsing(line)
+
+    col_pat3 = re.search(
+        r"(\d+(?:\.\d+)?)\s+(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:\d+(?:\.\d+)?%\s+)?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s*$",
+        cleaned,
+    )
+    if col_pat3:
+        q = float(col_pat3.group(1))
+        r = float(col_pat3.group(2).replace("$", "").replace(",", ""))
+        a = float(col_pat3.group(3).replace("$", "").replace(",", ""))
+        return q, r, a
+
+    col_pat2 = re.search(
+        r"(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s+(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s*$",
+        cleaned,
+    )
+    if col_pat2:
+        r = float(col_pat2.group(1).replace("$", "").replace(",", ""))
+        a = float(col_pat2.group(2).replace("$", "").replace(",", ""))
+        dm = re.search(r"\b(\d+)\s*(?:days?|hours?|hrs?|units?)\b", line, re.I)
+        q = float(dm.group(1)) if dm else 1.0
+        return q, r, a
 
     num_matches = re.findall(r"\$?\s*([0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?)", cleaned)
     nums: List[float] = []
@@ -484,6 +544,10 @@ def _parse_line_values(line: str) -> Tuple[float, float, float]:
 
     if len(nums) == 2:
         n1, n2 = nums[0], nums[1]
+        if n2 == 0.0:
+            dm = re.search(r"\b(\d+)\s*(?:days?|hours?|hrs?|units?)\b", line, re.I)
+            q = float(dm.group(1)) if dm else 1.0
+            return q, n1, 0.0
         if abs(n1 - n2) < 0.01:
             return 1.0, n1, n2
         if 0 < n1 <= 100 and n2 >= n1:
@@ -566,60 +630,126 @@ def parse_invoice_text(raw_text: str) -> Dict[str, Any]:
             "raw_text": str
         }
     """
-    raw_lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    cleaned_text = normalize_extracted_text(raw_text)
+    raw_lines = [line.strip() for line in cleaned_text.splitlines() if line.strip()]
     parsed_lines: List[Dict[str, Any]] = []
 
     idx = 0
     n = len(raw_lines)
     while idx < n:
-        current_line = raw_lines[idx]
+        line = raw_lines[idx]
 
         # Check for summary lines (not line items)
-        if SUMMARY_LINE_PATTERN.search(current_line):
+        if SUMMARY_LINE_PATTERN.search(line):
             idx += 1
             continue
 
-        category = _classify_line(current_line)
-        if not category:
+        cat = _classify_line(line)
+        if not cat:
             idx += 1
             continue
 
-        # Lookahead: if the current line has a charge category keyword but no amount,
-        # and the next line has an amount without its own charge keyword, merge them.
-        merged_line = current_line
-        if idx + 1 < n:
-            next_line = raw_lines[idx + 1]
-            has_nums_cur = bool(re.search(r"\$?\s*[0-9]+(?:\.[0-9]{2})?", current_line))
-            next_category = _classify_line(next_line)
-            has_nums_next = bool(re.search(r"\$?\s*[0-9]+(?:\.[0-9]{2})?", next_line))
-            is_non_item_next = bool(NON_ITEM_PATTERN.search(next_line)) or bool(HEADER_LINE_PATTERN.search(next_line))
+        block_lines = [line]
+        idx += 1
+        while idx < n:
+            next_l = raw_lines[idx]
+            if SUMMARY_LINE_PATTERN.search(next_l):
+                break
+            next_cat = _classify_line(next_l)
+            if next_cat:
+                break
+            block_lines.append(next_l)
+            idx += 1
 
-            if not has_nums_cur and has_nums_next and next_category is None and not is_non_item_next:
-                merged_line = f"{current_line} {next_line}"
-                idx += 1
+        best_candidate = None
+        best_score = -1
 
-        qty, unit_rate, amount = _parse_line_values(merged_line)
+        for bl in block_lines:
+            clean_bl = _clean_numbers_for_amount_parsing(bl)
+            col_pat3 = re.search(
+                r"(\d+(?:\.\d+)?)\s+(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:\d+(?:\.\d+)?%\s+)?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s*$",
+                clean_bl,
+            )
+            if col_pat3:
+                q = float(col_pat3.group(1))
+                r = float(col_pat3.group(2).replace("$", "").replace(",", ""))
+                a = float(col_pat3.group(3).replace("$", "").replace(",", ""))
+                score = 4
+                if score > best_score:
+                    best_score = score
+                    best_candidate = (q, r, a)
+                continue
 
-        # Include if amount or rate > 0
-        if amount > 0 or unit_rate > 0:
+            col_pat2 = re.search(
+                r"(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s+(\$?\d+(?:,\d{3})*(?:\.\d{2})?)\s*$",
+                clean_bl,
+            )
+            if col_pat2:
+                r = float(col_pat2.group(1).replace("$", "").replace(",", ""))
+                a = float(col_pat2.group(2).replace("$", "").replace(",", ""))
+                dm = re.search(r"\b(\d+)\s*(?:days?|hours?|hrs?|units?)\b", " ".join(block_lines), re.I)
+                q = float(dm.group(1)) if dm else 1.0
+                score = 3
+                if score > best_score:
+                    best_score = score
+                    best_candidate = (q, r, a)
+                continue
+
+            q, r, a = _parse_line_values(bl)
+            if a > 0 or r > 0 or "free" in bl.lower():
+                score = 2 if ("." in bl or "$" in bl) else 1
+                if score > best_score:
+                    best_score = score
+                    best_candidate = (q, r, a)
+
+        if best_candidate:
+            best_q, best_r, best_a = best_candidate
+        else:
+            joined = " ".join(block_lines)
+            best_q, best_r, best_a = _parse_line_values(joined)
+
+        desc = block_lines[0]
+        if best_a > 0 or best_r > 0 or "free" in " ".join(block_lines).lower() or cat == "chassis":
             parsed_lines.append(
                 {
-                    "type": category,
-                    "description": _clean_description(merged_line),
-                    "qty": round(float(qty), 2),
-                    "unit_rate": round(float(unit_rate), 2),
-                    "amount": round(float(amount), 2),
+                    "type": cat,
+                    "description": _clean_description(desc),
+                    "qty": round(float(best_q or 1.0), 2),
+                    "unit_rate": round(float(best_r or 0.0), 2),
+                    "amount": round(float(best_a or 0.0), 2),
                 }
             )
 
-        idx += 1
+    # Extract metadata
+    metadata: Dict[str, Any] = {}
+    m_inv = re.search(r"\b(INV-[A-Za-z0-9-]+)\b", cleaned_text, re.I)
+    if not m_inv:
+        m_inv = re.search(r"\b(?:invoice\s*(?:number|no|#)|inv\s*#?)\s*[:=]?\s*([A-Za-z0-9-]+)", cleaned_text, re.I)
+    if m_inv:
+        metadata["invoice_number"] = m_inv.group(1).strip()
 
-    total = _extract_invoice_total(raw_text, parsed_lines)
+    m_cnt = re.search(r"\b([A-Z]{3,4}\s*\d{6,7})\b", cleaned_text)
+    if m_cnt:
+        metadata["container_number"] = m_cnt.group(1).replace(" ", "")
+
+    m_ref = re.search(r"\b(?:reference|ref\s*#?)\s*[:=]?\s*([^\n]+)", cleaned_text, re.I)
+    if m_ref:
+        metadata["reference"] = m_ref.group(1).strip()
+
+    for top_line in raw_lines[:6]:
+        if re.search(r"\b(?:LLC|INC|CORP|LTD|LOGISTICS|TRANSPORT(?:ATIONS)?|TRUCKING|DRAYAGE|EXPRESS)\b", top_line, re.I):
+            clean_carrier = re.sub(r"^\s*Bill\s+to\s+", "", top_line, flags=re.I).strip()
+            if "bill to" not in clean_carrier.lower() and len(clean_carrier) > 4:
+                metadata["carrier_name"] = clean_carrier
+                break
+
+    total = _extract_invoice_total(cleaned_text, parsed_lines)
 
     return {
         "lines": parsed_lines,
         "total": round(float(total), 2),
-        "raw_text": raw_text,
+        "metadata": metadata,
+        "raw_text": cleaned_text,
     }
 
 

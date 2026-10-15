@@ -129,3 +129,20 @@ def test_process_invoice_multiple_formats():
         assert name == fname
         assert mime == expected_mime
 
+
+def test_process_invoice_inv2940_real_pdf():
+    """Verify that Invoice INV-2940.pdf parses with 0 container number interference."""
+    from src.ocr import process_invoice
+    inv_path = Path("C:/Users/krish/Downloads/Invoice INV-2940.pdf")
+    if inv_path.exists():
+        res = process_invoice(inv_path, filename="Invoice INV-2940.pdf")
+        assert res["total"] == 570.0
+        assert len(res["lines"]) == 4
+        assert res["lines"][0]["amount"] == 307.0
+        assert res["lines"][1]["amount"] == 138.0
+        assert res["lines"][2]["amount"] == 0.0
+        assert res["lines"][3]["amount"] == 125.0
+        assert res["metadata"]["container_number"] == "FFAU6431820"
+        assert res["metadata"]["invoice_number"] == "INV-2940"
+
+

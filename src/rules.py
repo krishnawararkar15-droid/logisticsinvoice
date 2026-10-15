@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -138,11 +139,13 @@ def _audit_single_line(
     timeline: Dict[str, Any],
     chassis_policy: str,
     seen_types: set,
+    total_linehaul_billed: Optional[float] = None,
 ) -> LineAuditResult:
     charge_type = line.get("type", "").strip().lower()
     qty = float(line.get("qty", 0))
     unit_rate = float(line.get("unit_rate", 0))
     amount = float(line.get("amount", 0))
+    desc_str = str(line.get("description", "")).lower()
 
     flags: List[str] = []
     missing_items: List[str] = []
@@ -152,10 +155,15 @@ def _audit_single_line(
     # 1. Math check
     calc_amount = round(qty * unit_rate, 2)
     if abs(calc_amount - amount) > 0.01:
-        flags.append(FLAG_MATH_ERROR)
+        if amount == 0.0 and ("free" in desc_str or qty == 0):
+            pass
+        else:
+            flags.append(FLAG_MATH_ERROR)
 
-    # 2. Duplicate line check
-    if charge_type in seen_types:
+    # 2. Duplicate line check (distinguish Base Linehaul vs FSC)
+    is_fsc = bool(re.search(r"\b(?:fsc|fuel)\b", desc_str))
+    line_cat_key = f"{charge_type}:{'fsc' if is_fsc else 'base'}" if charge_type == "linehaul_fsc" else charge_type
+    if line_cat_key in seen_types:
         flags.append(FLAG_DUPLICATE_LINE)
 
     # 3. Agreed rate lookup
@@ -163,8 +171,13 @@ def _audit_single_line(
     agreed_rate = terms.get(rate_key) if rate_key else None
     if agreed_rate is None and rate_key not in terms:
         flags.append(FLAG_UNAGREED_CHARGE)
-    elif agreed_rate is not None and abs(float(agreed_rate) - unit_rate) > 0.01:
-        flags.append(FLAG_RATE_MISMATCH)
+    elif agreed_rate is not None:
+        if amount == 0.0:
+            pass
+        elif charge_type == "linehaul_fsc" and total_linehaul_billed is not None and abs(float(agreed_rate) - total_linehaul_billed) <= 0.01:
+            pass
+        elif abs(float(agreed_rate) - unit_rate) > 0.01:
+            flags.append(FLAG_RATE_MISMATCH)
 
     # If unagreed charge or duplicate line, dispute entirely
     if FLAG_UNAGREED_CHARGE in flags:
@@ -215,8 +228,12 @@ def _audit_single_line(
         if not pod_provided:
             missing_items.append("Signed Proof of Delivery (POD)")
 
-        rate_diff = max(0.0, round((unit_rate - expected_rate) * qty, 2))
-        math_diff = max(0.0, round(amount - calc_amount, 2))
+        if total_linehaul_billed is not None and abs(float(expected_rate) - total_linehaul_billed) <= 0.01:
+            rate_diff = 0.0
+        else:
+            rate_diff = max(0.0, round((unit_rate - expected_rate) * qty, 2))
+
+        math_diff = max(0.0, round(amount - calc_amount, 2)) if FLAG_MATH_ERROR in flags else 0.0
         disputed_amount = rate_diff + math_diff
         approved_amount = max(0.0, round(amount - disputed_amount, 2))
         needs_proof_amount = 0.0
@@ -311,21 +328,25 @@ def _audit_single_line(
         elif min_days > 0:
             calc_note += f"; meets {min_days}-day drayage minimum"
 
-        if qty <= supported_days:
+        if amount == 0.0:
             approved_qty = qty
             disputed_qty = 0.0
-            approved_amount = round(qty * expected_rate, 2)
-            disputed_amount = round(amount - approved_amount, 2)
+            approved_amount = 0.0
+            disputed_amount = 0.0
             status = STATUS_APPROVE
+            reason = f"Carrier billed $0.00 ({calc_note}). Approved."
+        elif qty <= supported_days:
+            approved_qty = qty
+            disputed_qty = 0.0
+            approved_amount = min(amount, round(qty * expected_rate, 2))
+            disputed_amount = max(0.0, round(amount - approved_amount, 2))
+            status = STATUS_APPROVE if disputed_amount == 0 else STATUS_DISPUTE
             reason = f"{int(qty)} day(s) (${approved_amount:.0f}) APPROVE. Supported by timeline ({calc_note})."
         else:
             approved_qty = float(supported_days)
             disputed_qty = float(qty - supported_days)
-            approved_amount = round(approved_qty * expected_rate, 2)
-            disputed_amount = round(disputed_qty * expected_rate, 2)
-            # Add any rate/math excess to disputed
-            extra_dispute = max(0.0, round(amount - (approved_amount + disputed_amount), 2))
-            disputed_amount += extra_dispute
+            approved_amount = min(amount, round(approved_qty * expected_rate, 2))
+            disputed_amount = max(0.0, round(amount - approved_amount, 2))
             status = STATUS_DISPUTE
             reason = (
                 f"{int(approved_qty)} day(s) (${approved_amount:.0f}) APPROVE, "
@@ -746,6 +767,7 @@ def audit_invoice(
 
     lines_data = invoice.get("lines", [])
     invoice_total = float(invoice.get("total", 0.0))
+    total_linehaul_billed = sum(float(l.get("amount", 0.0)) for l in lines_data if l.get("type") == "linehaul_fsc")
 
     audited_lines: List[LineAuditResult] = []
     seen_types = set()
@@ -753,8 +775,13 @@ def audit_invoice(
 
     sum_line_amounts = 0.0
     for line in lines_data:
-        res = _audit_single_line(line, terms, timeline, effective_policy, seen_types)
-        seen_types.add(res.type)
+        res = _audit_single_line(
+            line, terms, timeline, effective_policy, seen_types, total_linehaul_billed=total_linehaul_billed
+        )
+        desc_str = str(line.get("description", "")).lower()
+        is_fsc = bool(re.search(r"\b(?:fsc|fuel)\b", desc_str))
+        cat_key = f"{res.type}:{'fsc' if is_fsc else 'base'}" if res.type == "linehaul_fsc" else res.type
+        seen_types.add(cat_key)
         audited_lines.append(res)
         sum_line_amounts += res.amount
         all_flags.extend(res.flags)
