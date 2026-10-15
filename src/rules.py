@@ -162,7 +162,15 @@ def _audit_single_line(
 
     # 2. Duplicate line check (distinguish Base Linehaul vs FSC)
     is_fsc = bool(re.search(r"\b(?:fsc|fuel)\b", desc_str))
-    line_cat_key = f"{charge_type}:{'fsc' if is_fsc else 'base'}" if charge_type == "linehaul_fsc" else charge_type
+    if charge_type == "linehaul_fsc":
+        if is_fsc:
+            line_cat_key = "linehaul_fsc:fsc"
+        elif "linehaul_fsc:base" in seen_types and "linehaul_fsc:fsc" not in seen_types:
+            line_cat_key = "linehaul_fsc:fsc"
+        else:
+            line_cat_key = "linehaul_fsc:base"
+    else:
+        line_cat_key = charge_type
     if line_cat_key in seen_types:
         flags.append(FLAG_DUPLICATE_LINE)
 
@@ -780,7 +788,15 @@ def audit_invoice(
         )
         desc_str = str(line.get("description", "")).lower()
         is_fsc = bool(re.search(r"\b(?:fsc|fuel)\b", desc_str))
-        cat_key = f"{res.type}:{'fsc' if is_fsc else 'base'}" if res.type == "linehaul_fsc" else res.type
+        if res.type == "linehaul_fsc":
+            if is_fsc:
+                cat_key = "linehaul_fsc:fsc"
+            elif "linehaul_fsc:base" in seen_types and "linehaul_fsc:fsc" not in seen_types:
+                cat_key = "linehaul_fsc:fsc"
+            else:
+                cat_key = "linehaul_fsc:base"
+        else:
+            cat_key = res.type
         seen_types.add(cat_key)
         audited_lines.append(res)
         sum_line_amounts += res.amount

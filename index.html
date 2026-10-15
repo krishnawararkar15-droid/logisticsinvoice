@@ -1360,8 +1360,11 @@
       tbody.innerHTML = '';
       lines.forEach((line, index) => {
         const tr = document.createElement('tr');
+        const desc = (line.description || '').replace(/"/g, '&quot;');
+        tr.dataset.description = line.description || '';
         tr.innerHTML = `
           <td>
+            <input type="hidden" class="line-desc" value="${desc}">
             <select class="form-control line-type">
               <option value="linehaul_fsc" ${line.type === 'linehaul_fsc' ? 'selected' : ''}>Linehaul + FSC</option>
               <option value="chassis" ${line.type === 'chassis' ? 'selected' : ''}>Chassis</option>
@@ -1400,7 +1403,7 @@
 
     function addInvoiceLine() {
       const lines = getInvoiceLines();
-      lines.push({ type: "chassis", qty: 1, unit_rate: 45, amount: 45 });
+      lines.push({ type: "chassis", description: "Chassis Usage", qty: 1, unit_rate: 45, amount: 45 });
       renderInvoiceLines(lines);
       autoSumLines();
     }
@@ -1418,6 +1421,7 @@
       rows.forEach(r => {
         lines.push({
           type: r.querySelector('.line-type').value,
+          description: r.querySelector('.line-desc')?.value || r.dataset.description || '',
           qty: parseFloat(r.querySelector('.line-qty').value) || 0,
           unit_rate: parseFloat(r.querySelector('.line-rate').value) || 0,
           amount: parseFloat(r.querySelector('.line-amount').value) || 0
@@ -1599,7 +1603,11 @@
               }
             }
             statusDiv.style.color = 'var(--success)';
-            statusDiv.innerHTML = `✅ Extracted ${parsed.lines.length} line items from invoice (Total: $${parsed.total || '0'})! <button type="button" onclick="autoAlignTermsWithInvoice()" class="btn btn-sm btn-outline-primary" style="margin-left: 8px; font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">⚡ Auto-Align Contract Terms</button>`;
+            statusDiv.innerHTML = `✅ Extracted ${parsed.lines.length} line items (Total: $${parsed.total || '0'}). Auto-aligning contract terms & auditing...`;
+            
+            // Automatically auto-align terms to the uploaded invoice and run audit
+            autoAlignTermsWithInvoice(parsed);
+            triggerAudit();
           } else {
             statusDiv.style.color = 'var(--warning)';
             statusDiv.innerText = `⚠️ OCR finished, but could not detect standard drayage line items. You can add or edit lines below.`;
@@ -1614,8 +1622,8 @@
       }
     }
 
-    function autoAlignTermsWithInvoice() {
-      const parsed = window.lastParsedInvoice;
+    function autoAlignTermsWithInvoice(parsedObj) {
+      const parsed = parsedObj || window.lastParsedInvoice;
       if (!parsed || !parsed.lines) return;
 
       const lhLines = parsed.lines.filter(l => l.type === 'linehaul_fsc');
@@ -1641,6 +1649,33 @@
         }
       }
 
+      const rawText = parsed.raw_text || '';
+      // Parse dates from rawText, e.g. 08/18/2026-08/19/2026
+      const rangeMatch = rawText.match(/\b(\d{2})\/(\d{2})\/(20\d{2})\s*-\s*(\d{2})\/(\d{2})\/(20\d{2})\b/);
+      if (rangeMatch) {
+        const m1 = rangeMatch[1], d1 = rangeMatch[2], y1 = rangeMatch[3];
+        const m2 = rangeMatch[4], d2 = rangeMatch[5], y2 = rangeMatch[6];
+        const dtPickup = `${y1}-${m1}-${d1}T08:00`;
+        const dtDeliv = `${y2}-${m2}-${d2}T10:00`;
+        const dtReturn = `${y2}-${m2}-${d2}T16:00`;
+        if (document.getElementById('terminal_pickup')) document.getElementById('terminal_pickup').value = dtPickup;
+        if (document.getElementById('delivery_actual')) document.getElementById('delivery_actual').value = dtDeliv;
+        if (document.getElementById('warehouse_appointment')) document.getElementById('warehouse_appointment').value = dtDeliv;
+        if (document.getElementById('empty_return')) document.getElementById('empty_return').value = dtReturn;
+        if (document.getElementById('null_terminal_pickup')) document.getElementById('null_terminal_pickup').checked = false;
+        if (document.getElementById('null_delivery_actual')) document.getElementById('null_delivery_actual').checked = false;
+        if (document.getElementById('null_empty_return')) document.getElementById('null_empty_return').checked = false;
+        if (document.getElementById('terminal_pickup')) document.getElementById('terminal_pickup').disabled = false;
+        if (document.getElementById('delivery_actual')) document.getElementById('delivery_actual').disabled = false;
+        if (document.getElementById('empty_return')) document.getElementById('empty_return').disabled = false;
+      }
+
+      if (rawText.toLowerCase().includes('storage included') || (prepullLine && (prepullLine.description || '').toLowerCase().includes('storage included'))) {
+        if (document.getElementById('prepull_includes_first_storage_day')) {
+          document.getElementById('prepull_includes_first_storage_day').value = 'yes';
+        }
+      }
+
       if (document.getElementById('haul_type')) {
         document.getElementById('haul_type').value = 'short';
       }
@@ -1653,7 +1688,7 @@
 
       const statusDiv = document.getElementById('ocr-status');
       if (statusDiv) {
-        statusDiv.innerHTML = `✅ Contract terms, POD, and timeline auto-aligned to this carrier invoice! Click <strong>"Check Invoice"</strong> below to run clean audit.`;
+        statusDiv.innerHTML = `✅ Contract terms, POD, and timeline auto-aligned to this carrier invoice! <button type="button" onclick="autoAlignTermsWithInvoice(); triggerAudit();" class="btn btn-sm btn-outline-primary" style="margin-left: 8px; font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">⚡ Re-Sync Terms</button>`;
       }
     }
 
