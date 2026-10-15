@@ -180,3 +180,41 @@ def test_workspace_batch_dom_hierarchy():
         f"workspace-batch is mistakenly nested inside workspace-single! Ancestors: {parser.batch_parents}"
     )
 
+
+def test_mobile_responsiveness_rules():
+    """Verify that index.html contains mobile responsive media queries and card view transformations."""
+    html_path = Path(__file__).resolve().parent.parent / "index.html"
+    content = html_path.read_text(encoding="utf-8")
+
+    # 1. Viewport meta tag
+    assert '<meta name="viewport" content="width=device-width, initial-scale=1.0">' in content
+
+    # 2. Mobile media queries
+    assert "@media (max-width: 768px)" in content
+    assert "@media (max-width: 420px)" in content
+
+    # 3. Mobile card view transformation and data-label content
+    assert ".mobile-card-view" in content
+    assert "content: attr(data-label);" in content
+
+    # 4. Tables configured for mobile card transformation
+    assert 'id="audit-results-table"' in content
+    assert 'class="data-table mobile-card-view" id="audit-results-table"' in content
+    assert 'id="doc-checklist-table"' in content
+    assert 'class="data-table mobile-card-view" id="doc-checklist-table"' in content
+    assert 'id="batch-results-table"' in content
+    assert 'class="data-table mobile-card-view" id="batch-results-table"' in content
+
+    # 5. Mobile swipeable tab bar
+    assert "overflow-x: auto;" in content
+    assert "-webkit-overflow-scrolling: touch;" in content
+
+    # 6. Mobile 2-column metrics container and structured action bar
+    assert "repeat(2, 1fr)" in content
+    assert "audit-actions-container" in content
+    assert "btn-dispute-packet" in content
+
+    # 7. 16px input font size to prevent iOS Safari auto-zoom
+    assert "font-size: 16px !important;" in content
+
+

@@ -494,6 +494,386 @@
       color: #fca5a5;
       border-color: #991b1b;
     }
+
+    /* ==========================================================================
+       MOBILE & RESPONSIVE PERFECTION STYLESHEET (Smartphones & Tablets)
+       ========================================================================== */
+
+    .mobile-table-hint {
+      display: none;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--table-hover);
+      border-radius: 6px;
+      border: 1px dashed var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-table-hint {
+        display: flex;
+      }
+
+      /* 1. Global Spacing & Typography */
+      body {
+        padding-bottom: 40px;
+        font-size: 0.9rem;
+      }
+      .container {
+        margin: 14px auto;
+        padding: 0 12px;
+      }
+      .card {
+        padding: 16px 14px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+      }
+      .card-title {
+        font-size: 1.05rem;
+        margin-bottom: 12px;
+      }
+
+      /* 2. Header & Branding */
+      .header {
+        padding: 14px 14px;
+      }
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .logo-group h1 {
+        font-size: 1.2rem;
+        gap: 8px;
+        line-height: 1.25;
+      }
+      .logo-group p {
+        font-size: 0.78rem;
+        line-height: 1.35;
+        margin-top: 3px;
+      }
+      .header-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+      .header-actions .btn,
+      .header-actions .theme-toggle-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        min-height: 40px;
+      }
+
+      /* 3. Audit Mode Switcher */
+      .mode-switcher-container {
+        width: 100%;
+        display: flex;
+      }
+      .mode-tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 9px 8px;
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      /* 4. Dropzones & Upload Bars */
+      .dropzone {
+        padding: 16px 12px !important;
+      }
+      .upload-btn-wrap {
+        width: 100% !important;
+      }
+      .upload-bar-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        min-height: 44px !important;
+        font-size: 0.9rem !important;
+      }
+
+      /* 5. Navigation Tabs (Horizontal Touch Swipe) */
+      .tabs {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 6px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 2px;
+        flex-wrap: nowrap;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .tab-btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 9px 13px;
+        font-size: 0.84rem;
+      }
+
+      /* 6. Form Fields & Touch Targets */
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+      }
+      .form-group {
+        margin-bottom: 11px;
+      }
+      .form-label {
+        font-size: 0.82rem;
+        margin-bottom: 4px;
+      }
+      .form-control {
+        font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+        padding: 9px 11px;
+        min-height: 42px;
+        border-radius: 7px;
+      }
+      .checkbox-label {
+        font-size: 0.84rem;
+        padding: 5px 0;
+        min-height: 38px;
+      }
+      .checkbox-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* 7. Action Button */
+      .btn-primary.btn-lg {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+        font-size: 1rem;
+        min-height: 48px;
+      }
+
+      /* 8. Financial Metric Cards (2-Column Grid on Mobile) */
+      .metrics-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+      }
+      .metrics-container .metric-card:first-child {
+        grid-column: span 2;
+      }
+      .metric-card {
+        padding: 12px 14px;
+        border-radius: 10px;
+      }
+      .metric-title {
+        font-size: 0.7rem;
+        margin-bottom: 4px;
+      }
+      .metric-value {
+        font-size: 1.35rem;
+        line-height: 1.2;
+      }
+      .metric-sub {
+        font-size: 0.72rem;
+        margin-top: 3px;
+      }
+
+      /* 9. Results Action Buttons Grid */
+      .audit-actions-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+        margin-top: 8px;
+      }
+      .audit-actions-container .btn-dispute-packet {
+        grid-column: span 2;
+        width: 100%;
+        justify-content: center;
+        padding: 12px 14px;
+        font-size: 0.88rem;
+        min-height: 44px;
+      }
+      .audit-actions-container .btn-secondary {
+        justify-content: center;
+        padding: 9px 8px;
+        font-size: 0.78rem;
+        text-align: center;
+        min-height: 38px;
+      }
+
+      /* 10. Audit Table Mobile Card Transformation */
+      .mobile-card-view thead {
+        display: none !important;
+      }
+      .mobile-card-view,
+      .mobile-card-view tbody,
+      .mobile-card-view tr,
+      .mobile-card-view td {
+        display: block !important;
+        width: 100% !important;
+      }
+      .mobile-card-view tr {
+        margin-bottom: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-card);
+        padding: 12px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .mobile-card-view td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 7px 0 !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        font-size: 0.86rem;
+        text-align: right;
+      }
+      .mobile-card-view td:last-child {
+        border-bottom: none !important;
+      }
+      .mobile-card-view td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        text-align: left;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+      .mobile-card-view td:first-child {
+        font-size: 0.96rem;
+        font-weight: 700;
+        padding-bottom: 8px !important;
+        border-bottom: 2px solid var(--border-color) !important;
+      }
+      #audit-results-table.mobile-card-view td:last-child,
+      #drilldown-lines-table.mobile-card-view td:last-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        background: var(--table-hover);
+        padding: 10px 12px !important;
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+      #audit-results-table.mobile-card-view td:last-child::before,
+      #drilldown-lines-table.mobile-card-view td:last-child::before {
+        margin-bottom: 4px;
+      }
+      #doc-checklist-table.mobile-card-view td[data-label="Carrier Must Provide"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        background: var(--table-hover);
+        padding: 10px 12px !important;
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+      #doc-checklist-table.mobile-card-view td[data-label="Verify"] {
+        justify-content: flex-start !important;
+        gap: 10px;
+      }
+      #batch-results-table.mobile-card-view td[data-label="Actions"] {
+        justify-content: flex-end !important;
+        padding-top: 8px !important;
+      }
+      #batch-queue-table.mobile-card-view td[data-label="Action"] {
+        justify-content: flex-end !important;
+        padding-top: 8px !important;
+      }
+
+      /* 11. Invoice Lines Editor Table Styling */
+      #invoice-lines-table {
+        min-width: 480px;
+      }
+      #invoice-lines-table .line-type {
+        min-width: 130px;
+      }
+      #invoice-lines-table .line-qty {
+        min-width: 70px;
+      }
+      #invoice-lines-table .line-rate {
+        min-width: 85px;
+      }
+      #invoice-lines-table .line-amount {
+        min-width: 90px;
+      }
+
+      .total-billed-row {
+        justify-content: space-between !important;
+        width: 100% !important;
+      }
+      .total-billed-row .form-control {
+        width: 130px !important;
+      }
+
+      /* 12. Modal on Mobile */
+      .modal-overlay {
+        padding: 10px;
+      }
+      .modal-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 94vh !important;
+        padding: 16px 14px !important;
+        border-radius: 10px !important;
+      }
+
+      /* 13. Pre-Written Email */
+      .email-action-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+        margin-top: 8px;
+      }
+      .email-action-bar .btn {
+        justify-content: center;
+        padding: 9px 10px;
+        font-size: 0.82rem;
+      }
+      #email-body {
+        font-size: 0.82rem !important;
+      }
+
+      /* 14. Disclaimer Box */
+      .disclaimer-box {
+        padding: 12px 14px;
+        font-size: 0.84rem;
+        margin: 16px 0 12px 0;
+      }
+    }
+
+    /* Extra Compact for smaller phones (< 420px) */
+    @media (max-width: 420px) {
+      .logo-group h1 {
+        font-size: 1.1rem;
+      }
+      .metric-value {
+        font-size: 1.22rem;
+      }
+      .btn {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+      }
+      .tab-btn {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+      }
+      .audit-actions-container {
+        grid-template-columns: 1fr;
+      }
+      .audit-actions-container .btn-dispute-packet {
+        grid-column: span 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -504,7 +884,7 @@
         <h1>🚚 Accessorial Invoice Checker</h1>
         <p>Deterministic Drayage & Intermodal Audit Engine — No AI APIs, 100% Explainable Date Math</p>
       </div>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+      <div class="header-actions">
         <button class="btn btn-secondary" onclick="resetForm()">🔄 Reset Form</button>
         <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
           <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
@@ -547,9 +927,9 @@
             <div style="font-size: 0.8rem; color: var(--text-muted);">Drop or upload any document (PDF, PNG, JPG, JPEG, WEBP, TIFF, BMP, TXT, JSON) to auto-extract line items</div>
           </div>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="upload-btn-wrap">
           <input type="file" id="top-invoice-file" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.json,.txt,image/*,application/pdf" onchange="handleInvoiceFile(this)">
-          <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('top-invoice-file').click()">📂 Select Invoice File</button>
+          <button class="btn btn-primary upload-bar-btn" onclick="event.stopPropagation(); document.getElementById('top-invoice-file').click()">📂 Select Invoice File</button>
         </div>
       </div>
 
@@ -577,9 +957,9 @@
               <div style="font-size: 0.8rem; color: var(--text-muted);">Drop or upload broker Rate Con (PDF, PNG, JPG, TIFF, TXT) to automatically populate agreed linehaul, chassis, storage, and detention terms</div>
             </div>
           </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="upload-btn-wrap">
             <input type="file" id="ratecon-file-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.txt,image/*,application/pdf" onchange="handleRateconFile(this)">
-            <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('ratecon-file-input').click()" style="box-shadow: 0 2px 8px rgba(30,64,175,0.2);">
+            <button class="btn btn-primary upload-bar-btn" onclick="event.stopPropagation(); document.getElementById('ratecon-file-input').click()" style="box-shadow: 0 2px 8px rgba(30,64,175,0.2);">
               📂 Auto-Fill from Rate Con
             </button>
           </div>
@@ -787,6 +1167,7 @@
         </div>
       </div>
 
+      <div class="mobile-table-hint"><span>👉 Swipe table horizontally to review & adjust quantities or rates</span></div>
       <div class="table-responsive">
         <table class="data-table" id="invoice-lines-table">
           <thead>
@@ -804,7 +1185,7 @@
         </table>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px;">
+      <div class="total-billed-row" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px;">
         <label class="form-label" style="margin: 0; font-size: 1rem;">Invoice Total Billed ($):</label>
         <input type="number" id="invoice_total" class="form-control" style="width: 180px; font-weight: 700; font-size: 1rem;" value="1875" step="0.01">
       </div>
@@ -832,8 +1213,8 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <h2 class="card-title" style="margin: 0;">Line-by-Line Audit Findings</h2>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="downloadDisputePacketPdf()" style="background: #b91c1c; border-color: #991b1b; font-weight: 700; box-shadow: 0 2px 8px rgba(185,28,28,0.25);">📄 Download Formal Dispute Packet (PDF)</button>
+          <div class="audit-actions-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-dispute-packet" onclick="downloadDisputePacketPdf()" style="background: #b91c1c; border-color: #991b1b; font-weight: 700; box-shadow: 0 2px 8px rgba(185,28,28,0.25);">📄 Download Formal Dispute Packet (PDF)</button>
             <button class="btn btn-secondary" onclick="viewFileInBrowser('csv')">👁️ View CSV in Browser</button>
             <button class="btn btn-secondary" onclick="viewFileInBrowser('md')">👁️ View Report</button>
             <button class="btn btn-secondary" onclick="downloadReport('csv')">📈 Download CSV</button>
@@ -842,8 +1223,9 @@
           </div>
         </div>
 
+        <div class="mobile-table-hint"><span>💡 Mobile View: Tap cards to inspect findings & plain English math</span></div>
         <div class="table-responsive">
-          <table class="data-table" id="audit-results-table">
+          <table class="data-table mobile-card-view" id="audit-results-table">
             <thead>
               <tr>
                 <th>Type</th>
@@ -878,7 +1260,7 @@
         </p>
 
         <div class="table-responsive">
-          <table class="data-table" id="doc-checklist-table">
+          <table class="data-table mobile-card-view" id="doc-checklist-table">
             <thead>
               <tr>
                 <th style="width: 60px; text-align: center;">Verify</th>
@@ -902,7 +1284,7 @@
           <h2 class="card-title" style="color: var(--primary); margin: 0;">
             ✉️ Pre-Written Polite Carrier Email (Relationship-Safe)
           </h2>
-          <div style="display: flex; gap: 8px;">
+          <div class="email-action-bar" style="display: flex; gap: 8px;">
             <button class="btn btn-primary" onclick="openInGmail()" style="background: #ea4335; border-color: #ea4335;">
               🚀 Open in Gmail
             </button>
@@ -951,12 +1333,12 @@
               Simultaneously audit up to 50 carrier invoices against agreed contractual terms. Cross-references milestones, aggregates financial exposure, and outputs itemized debit memos.
             </p>
           </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <div class="header-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
             <input type="file" id="batch-files-input" style="display: none;" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp,.jfif,.json,.txt,image/*,application/pdf" onchange="handleBatchFileInput(this)">
-            <button class="btn btn-primary" onclick="document.getElementById('batch-files-input').click()">
+            <button class="btn btn-primary upload-bar-btn" onclick="document.getElementById('batch-files-input').click()">
               📂 Upload Invoices (PDF/Image/JSON)
             </button>
-            <button class="btn btn-secondary" onclick="clearBatch()" style="color: var(--danger);">
+            <button class="btn btn-secondary upload-bar-btn" onclick="clearBatch()" style="color: var(--danger);">
               🗑️ Clear Batch
             </button>
           </div>
@@ -982,7 +1364,7 @@
             </div>
           </div>
           <div class="table-responsive">
-            <table class="data-table" id="batch-queue-table">
+            <table class="data-table mobile-card-view" id="batch-queue-table">
               <thead>
                 <tr>
                   <th style="width: 40px;">#</th>
@@ -1033,8 +1415,9 @@
             </div>
           </div>
 
+          <div class="mobile-table-hint"><span>💡 Mobile View: Tap cards to inspect portfolio invoice findings</span></div>
           <div class="table-responsive">
-            <table class="data-table" id="batch-results-table">
+            <table class="data-table mobile-card-view" id="batch-results-table">
               <thead>
                 <tr>
                   <th style="width: 40px;">#</th>
@@ -1084,7 +1467,7 @@
           <!-- Line items table -->
           <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--text-label);">Line-by-Line Findings & Contract Math</h4>
           <div class="table-responsive" style="margin-bottom: 18px;">
-            <table class="data-table" id="drilldown-lines-table">
+            <table class="data-table mobile-card-view" id="drilldown-lines-table">
               <thead>
                 <tr>
                   <th>Type</th>
@@ -1363,7 +1746,7 @@
         const desc = (line.description || '').replace(/"/g, '&quot;');
         tr.dataset.description = line.description || '';
         tr.innerHTML = `
-          <td>
+          <td data-label="Charge Type">
             <input type="hidden" class="line-desc" value="${desc}">
             <select class="form-control line-type">
               <option value="linehaul_fsc" ${line.type === 'linehaul_fsc' ? 'selected' : ''}>Linehaul + FSC</option>
@@ -1374,10 +1757,10 @@
               <option value="other" ${!['linehaul_fsc','chassis','storage','prepull','detention'].includes(line.type) ? 'selected' : ''}>Other / Unknown</option>
             </select>
           </td>
-          <td><input type="number" class="form-control line-qty" value="${line.qty}" step="0.5" oninput="updateLineAmount(${index})"></td>
-          <td><input type="number" class="form-control line-rate" value="${line.unit_rate}" step="0.01" oninput="updateLineAmount(${index})"></td>
-          <td><input type="number" class="form-control line-amount" value="${line.amount}" step="0.01"></td>
-          <td><button class="btn btn-secondary" style="color:var(--danger); padding:6px 10px;" onclick="removeInvoiceLine(${index})">✕</button></td>
+          <td data-label="Qty"><input type="number" class="form-control line-qty" value="${line.qty}" step="0.5" oninput="updateLineAmount(${index})"></td>
+          <td data-label="Unit Rate ($)"><input type="number" class="form-control line-rate" value="${line.unit_rate}" step="0.01" oninput="updateLineAmount(${index})"></td>
+          <td data-label="Amount ($)"><input type="number" class="form-control line-amount" value="${line.amount}" step="0.01"></td>
+          <td data-label="Action"><button class="btn btn-secondary" style="color:var(--danger); padding:6px 10px;" onclick="removeInvoiceLine(${index})">✕</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -2080,14 +2463,14 @@
         const flagsHtml = (l.flags || []).map(f => `<span class="badge badge-flag">${f}</span>`).join(' ') || 'None';
 
         tr.innerHTML = `
-          <td><strong>${l.type}</strong></td>
-          <td>$${fmt(l.amount !== undefined ? l.amount : l.billed_amount)}</td>
-          <td style="color:var(--success); font-weight:700;">$${fmt(l.approved_amount)}</td>
-          <td style="color:var(--danger); font-weight:700;">$${fmt(l.disputed_amount)}</td>
-          <td style="color:var(--warning); font-weight:700;">$${fmt(l.needs_proof_amount)}</td>
-          <td>${statusBadge}</td>
-          <td>${flagsHtml}</td>
-          <td style="font-size:0.84rem; line-height:1.4;">${l.reason || ''}</td>
+          <td data-label="Charge Type"><strong>${l.type}</strong></td>
+          <td data-label="Billed Amount">$${fmt(l.amount !== undefined ? l.amount : l.billed_amount)}</td>
+          <td data-label="Approved Amount" style="color:var(--success); font-weight:700;">$${fmt(l.approved_amount)}</td>
+          <td data-label="Disputed Amount" style="color:var(--danger); font-weight:700;">$${fmt(l.disputed_amount)}</td>
+          <td data-label="Needs Proof" style="color:var(--warning); font-weight:700;">$${fmt(l.needs_proof_amount)}</td>
+          <td data-label="Audit Status">${statusBadge}</td>
+          <td data-label="Flags">${flagsHtml}</td>
+          <td data-label="Audit Evidence & Math" style="font-size:0.84rem; line-height:1.4;">${l.reason || ''}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -2130,21 +2513,21 @@
 
       itemsContainer.innerHTML = requiredDocs.map((doc, idx) => `
         <tr class="doc-row" id="doc-row-${idx}">
-          <td style="text-align: center; vertical-align: middle;">
+          <td data-label="Verify" style="text-align: center; vertical-align: middle;">
             <input type="checkbox" id="doc-chk-${idx}" style="width: 17px; height: 17px; cursor: pointer;" onchange="toggleDocVerified(${idx}, ${requiredDocs.length})">
           </td>
-          <td style="font-weight: 700;">
+          <td data-label="Document Name" style="font-weight: 700;">
             <label for="doc-chk-${idx}" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
               <span>${doc.icon}</span> <span>${doc.name}</span>
             </label>
           </td>
-          <td style="color: var(--primary); font-weight: 600;">
+          <td data-label="Applies to Charge" style="color: var(--primary); font-weight: 600;">
             ${doc.charge}
           </td>
-          <td style="font-size: 0.83rem; color: var(--text-muted); line-height: 1.4;">
+          <td data-label="Carrier Must Provide" style="font-size: 0.83rem; color: var(--text-muted); line-height: 1.4;">
             ${doc.details}
           </td>
-          <td style="text-align: center; vertical-align: middle;">
+          <td data-label="Status" style="text-align: center; vertical-align: middle;">
             <span class="doc-status-pill pending" id="doc-status-${idx}">⏳ Pending</span>
           </td>
         </tr>
@@ -2459,13 +2842,13 @@ Premier Freight Brokerage`;
 
       tbody.innerHTML = queuedBatchInvoices.map((inv, idx) => `
         <tr>
-          <td style="font-weight: 700;">${idx + 1}</td>
-          <td><strong>${inv.invoice_id}</strong></td>
-          <td>${inv.carrier_name || 'Pacific Gateway Drayage LLC'}</td>
-          <td><code>${inv.container_no || 'N/A'}</code></td>
-          <td>${(inv.lines || []).length} lines</td>
-          <td style="font-weight: 700;">$${fmt(inv.total)}</td>
-          <td style="text-align: center;">
+          <td data-label="#">${idx + 1}</td>
+          <td data-label="Invoice"><strong>${inv.invoice_id}</strong></td>
+          <td data-label="Carrier">${inv.carrier_name || 'Pacific Gateway Drayage LLC'}</td>
+          <td data-label="Container"><code>${inv.container_no || 'N/A'}</code></td>
+          <td data-label="Lines">${(inv.lines || []).length} lines</td>
+          <td data-label="Total Billed" style="font-weight: 700;">$${fmt(inv.total)}</td>
+          <td data-label="Action" style="text-align: center;">
             <button class="btn btn-secondary" style="color: var(--danger); padding: 4px 8px;" onclick="removeBatchQueueItem(${idx})">✕</button>
           </td>
         </tr>
@@ -2649,17 +3032,17 @@ Premier Freight Brokerage`;
 
         return `
           <tr>
-            <td style="font-weight: 700;">${idx + 1}</td>
-            <td><strong>${inv.invoice_id}</strong></td>
-            <td>${inv.carrier_name || 'Pacific Gateway Drayage LLC'}</td>
-            <td><code>${inv.container_no || 'N/A'}</code></td>
-            <td>${(inv.lines || []).length}</td>
-            <td>$${fmt(s.total_billed)}</td>
-            <td style="color: var(--success); font-weight: 700;">$${fmt(s.approved_amount)}</td>
-            <td style="color: var(--danger); font-weight: 700;">$${fmt(s.disputed_amount)}</td>
-            <td style="color: var(--warning); font-weight: 700;">$${fmt(s.needs_proof_amount)}</td>
-            <td>${statusBadge}</td>
-            <td style="text-align: center;">
+            <td data-label="#">${idx + 1}</td>
+            <td data-label="Invoice #"><strong>${inv.invoice_id}</strong></td>
+            <td data-label="Carrier">${inv.carrier_name || 'Pacific Gateway Drayage LLC'}</td>
+            <td data-label="Container #"><code>${inv.container_no || 'N/A'}</code></td>
+            <td data-label="Lines">${(inv.lines || []).length}</td>
+            <td data-label="Total Billed">$${fmt(s.total_billed)}</td>
+            <td data-label="Approved" style="color: var(--success); font-weight: 700;">$${fmt(s.approved_amount)}</td>
+            <td data-label="Disputed" style="color: var(--danger); font-weight: 700;">$${fmt(s.disputed_amount)}</td>
+            <td data-label="Needs Proof" style="color: var(--warning); font-weight: 700;">$${fmt(s.needs_proof_amount)}</td>
+            <td data-label="Audit Status">${statusBadge}</td>
+            <td data-label="Actions" style="text-align: center;">
               <div style="display: inline-flex; gap: 6px;">
                 <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.8rem;" onclick="openBatchDrilldown(${idx})">
                   🔍 View Details
@@ -2741,13 +3124,13 @@ Premier Freight Brokerage`;
 
         return `
           <tr>
-            <td><strong>${l.type}</strong></td>
-            <td>$${fmt(l.amount !== undefined ? l.amount : l.billed_amount)}</td>
-            <td style="color:var(--success); font-weight:700;">$${fmt(l.approved_amount)}</td>
-            <td style="color:var(--danger); font-weight:700;">$${fmt(l.disputed_amount)}</td>
-            <td style="color:var(--warning); font-weight:700;">$${fmt(l.needs_proof_amount)}</td>
-            <td>${badge}</td>
-            <td style="font-size:0.83rem;">${l.reason || ''}</td>
+            <td data-label="Type"><strong>${l.type}</strong></td>
+            <td data-label="Billed">$${fmt(l.amount !== undefined ? l.amount : l.billed_amount)}</td>
+            <td data-label="Approved" style="color:var(--success); font-weight:700;">$${fmt(l.approved_amount)}</td>
+            <td data-label="Disputed" style="color:var(--danger); font-weight:700;">$${fmt(l.disputed_amount)}</td>
+            <td data-label="Needs Proof" style="color:var(--warning); font-weight:700;">$${fmt(l.needs_proof_amount)}</td>
+            <td data-label="Status">${badge}</td>
+            <td data-label="Finding & Math" style="font-size:0.83rem;">${l.reason || ''}</td>
           </tr>
         `;
       }).join('');
